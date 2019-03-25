@@ -5,3 +5,7 @@ set(AP_Math_sources AP_GeodesicGrid.cpp AP_Math.cpp crc.cpp edc.cpp location.cpp
 set( sources
         ${AP_Math_sources}
         )
+
+include_directories(../../libraries)
+
+add_library(AP_Math STATIC ${AP_Math_sources})

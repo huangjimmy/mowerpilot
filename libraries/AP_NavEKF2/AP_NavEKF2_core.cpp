@@ -1,14 +1,9 @@
-#include <AP_HAL/AP_HAL.h>
 
 #include "AP_NavEKF2.h"
 #include "AP_NavEKF2_core.h"
-#include <AP_AHRS/AP_AHRS.h>
-#include <AP_Vehicle/AP_Vehicle.h>
-#include <GCS_MAVLink/GCS.h>
 
 #include <stdio.h>
 
-extern const AP_HAL::HAL& hal;
 
 #define earthRate 0.000072921f // earth rotation rate (rad/sec)
 
@@ -19,26 +14,26 @@ extern const AP_HAL::HAL& hal;
 #define GYRO_BIAS_LIMIT 0.5f
 
 // constructor
-NavEKF2_core::NavEKF2_core(void) :
-    _perf_UpdateFilter(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_UpdateFilter")),
-    _perf_CovariancePrediction(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_CovariancePrediction")),
-    _perf_FuseVelPosNED(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseVelPosNED")),
-    _perf_FuseMagnetometer(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseMagnetometer")),
-    _perf_FuseAirspeed(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseAirspeed")),
-    _perf_FuseSideslip(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseSideslip")),
-    _perf_TerrainOffset(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_TerrainOffset")),
-    _perf_FuseOptFlow(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseOptFlow"))
+NavEKF2_core::NavEKF2_core(void) //:
+//    _perf_UpdateFilter(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_UpdateFilter")),
+//    _perf_CovariancePrediction(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_CovariancePrediction")),
+//    _perf_FuseVelPosNED(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseVelPosNED")),
+//    _perf_FuseMagnetometer(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseMagnetometer")),
+//    _perf_FuseAirspeed(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseAirspeed")),
+//    _perf_FuseSideslip(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseSideslip")),
+//    _perf_TerrainOffset(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_TerrainOffset")),
+//    _perf_FuseOptFlow(hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_FuseOptFlow"))
 {
-    _perf_test[0] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test0");
-    _perf_test[1] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test1");
-    _perf_test[2] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test2");
-    _perf_test[3] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test3");
-    _perf_test[4] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test4");
-    _perf_test[5] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test5");
-    _perf_test[6] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test6");
-    _perf_test[7] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test7");
-    _perf_test[8] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test8");
-    _perf_test[9] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test9");
+//    _perf_test[0] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test0");
+//    _perf_test[1] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test1");
+//    _perf_test[2] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test2");
+//    _perf_test[3] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test3");
+//    _perf_test[4] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test4");
+//    _perf_test[5] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test5");
+//    _perf_test[6] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test6");
+//    _perf_test[7] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test7");
+//    _perf_test[8] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test8");
+//    _perf_test[9] = hal.util->perf_alloc(AP_HAL::Util::PC_ELAPSED, "EK2_Test9");
 }
 
 // setup this core backend
@@ -47,7 +42,6 @@ bool NavEKF2_core::setup_core(NavEKF2 *_frontend, uint8_t _imu_index, uint8_t _c
     frontend = _frontend;
     imu_index = _imu_index;
     core_index = _core_index;
-    _ahrs = frontend->_ahrs;
 
     /*
       the imu_buffer_length needs to cope with a 260ms delay at a
@@ -55,12 +49,13 @@ bool NavEKF2_core::setup_core(NavEKF2 *_frontend, uint8_t _imu_index, uint8_t _c
       than 100Hz is downsampled. For 50Hz main loop rate we need a
       shorter buffer.
      */
-    if (AP::ins().get_sample_rate() < 100) {
-        imu_buffer_length = 13;
-    } else {
-        // maximum 260 msec delay at 100 Hz fusion rate
-        imu_buffer_length = 26;
-    }
+    imu_buffer_length = 26;
+//    if (AP::ins().get_sample_rate() < 100) {
+//        imu_buffer_length = 13;
+//    } else {
+//        // maximum 260 msec delay at 100 Hz fusion rate
+//        imu_buffer_length = 26;
+//    }
     if(!storedGPS.init(OBS_BUFFER_LENGTH)) {
         return false;
     }
@@ -106,8 +101,8 @@ bool NavEKF2_core::setup_core(NavEKF2 *_frontend, uint8_t _imu_index, uint8_t _c
 void NavEKF2_core::InitialiseVariables()
 {
     // calculate the nominal filter update rate
-    const AP_InertialSensor &ins = AP::ins();
-    localFilterTimeStep_ms = (uint8_t)(1000*ins.get_loop_delta_t());
+//    const AP_InertialSensor &ins = AP::ins();
+//    localFilterTimeStep_ms = (uint8_t)(1000*ins.get_loop_delta_t());
     localFilterTimeStep_ms = MAX(localFilterTimeStep_ms,10);
 
     // initialise time stamps
@@ -338,9 +333,9 @@ void NavEKF2_core::InitialiseVariablesMag()
 
     inhibitMagStates = true;
 
-    if (_ahrs->get_compass()) {
-        magSelectIndex = _ahrs->get_compass()->get_primary();
-    }
+//    if (_ahrs->get_compass()) {
+//        magSelectIndex = _ahrs->get_compass()->get_primary();
+//    }
     lastMagOffsetsValid = false;
     magStateResetRequest = false;
     magStateInitComplete = false;
@@ -358,13 +353,13 @@ void NavEKF2_core::InitialiseVariablesMag()
 bool NavEKF2_core::InitialiseFilterBootstrap(void)
 {
     // If we are a plane and don't have GPS lock then don't initialise
-    if (assume_zero_sideslip() && AP::gps().status() < AP_GPS::GPS_OK_FIX_3D) {
-        hal.util->snprintf(prearm_fail_string,
-                           sizeof(prearm_fail_string),
-                           "EKF2 init failure: No GPS lock");
-        statesInitialised = false;
-        return false;
-    }
+//    if (assume_zero_sideslip() && AP::gps().status() < AP_GPS::GPS_OK_FIX_3D) {
+//        hal.util->snprintf(prearm_fail_string,
+//                           sizeof(prearm_fail_string),
+//                           "EKF2 init failure: No GPS lock");
+//        statesInitialised = false;
+//        return false;
+//    }
 
     if (statesInitialised) {
         // we are initialised, but we don't return true until the IMU
@@ -380,10 +375,12 @@ bool NavEKF2_core::InitialiseFilterBootstrap(void)
     // set re-used variables to zero
     InitialiseVariables();
 
-    const AP_InertialSensor &ins = AP::ins();
+//    const AP_InertialSensor &ins = AP::ins();
 
     // Initialise IMU data
-    dtIMUavg = ins.get_loop_delta_t();
+    //TODO: need to init dtIMUavg
+    dtIMUavg = 0;
+//    dtIMUavg = ins.get_loop_delta_t();
     readIMUData();
     storedIMU.reset_history(imuDataNew);
     imuDataDelayed = imuDataNew;
@@ -392,7 +389,7 @@ bool NavEKF2_core::InitialiseFilterBootstrap(void)
     Vector3f initAccVec;
 
     // TODO we should average accel readings over several cycles
-    initAccVec = ins.get_accel(imu_index);
+    //initAccVec = ins.get_accel(imu_index);
 
     // read the magnetometer data
     readMagData();
@@ -437,7 +434,7 @@ bool NavEKF2_core::InitialiseFilterBootstrap(void)
     ResetHeight();
 
     // define Earth rotation vector in the NED navigation frame
-    calcEarthRateNED(earthRateNED, _ahrs->get_home().lat);
+//    calcEarthRateNED(earthRateNED, _ahrs->get_home().lat);
 
     // initialise the covariance matrix
     CovarianceInit();
@@ -514,7 +511,6 @@ void NavEKF2_core::UpdateFilter(bool predict)
 #if EK2_DISABLE_INTERRUPTS
     irqstate_t istate = irqsave();
 #endif
-    hal.util->perf_begin(_perf_UpdateFilter);
 
     // TODO - in-flight restart method
 
@@ -560,8 +556,6 @@ void NavEKF2_core::UpdateFilter(bool predict)
     // Wind output forward from the fusion to output time horizon
     calcOutputStates();
 
-    // stop the timer used for load measurement
-    hal.util->perf_end(_perf_UpdateFilter);
 #if EK2_DISABLE_INTERRUPTS
     irqrestore(istate);
 #endif
@@ -573,19 +567,19 @@ void NavEKF2_core::UpdateFilter(bool predict)
       that state the EKF can't recover, so we do a hard reset and let
       it try again.
      */
-    if (filterStatus.value != 0) {
-        last_filter_ok_ms = AP_HAL::millis();
-    }
-    if (filterStatus.value == 0 &&
-        last_filter_ok_ms != 0 &&
-        AP_HAL::millis() - last_filter_ok_ms > 5000 &&
-        !hal.util->get_soft_armed()) {
-        // we've been unhealthy for 5 seconds after being healthy, reset the filter
-        gcs().send_text(MAV_SEVERITY_WARNING, "EKF2 IMU%u forced reset",(unsigned)imu_index);
-        last_filter_ok_ms = 0;
-        statesInitialised = false;
-        InitialiseFilterBootstrap();
-    }
+//    if (filterStatus.value != 0) {
+//        last_filter_ok_ms = AP_HAL::millis();
+//    }
+//    if (filterStatus.value == 0 &&
+//        last_filter_ok_ms != 0 &&
+//        AP_HAL::millis() - last_filter_ok_ms > 5000 &&
+//        !hal.util->get_soft_armed()) {
+//        // we've been unhealthy for 5 seconds after being healthy, reset the filter
+//        gcs().send_text(MAV_SEVERITY_WARNING, "EKF2 IMU%u forced reset",(unsigned)imu_index);
+//        last_filter_ok_ms = 0;
+//        statesInitialised = false;
+//        InitialiseFilterBootstrap();
+//    }
     
 }
 
@@ -823,7 +817,6 @@ void NavEKF2_core::calcOutputStates()
 */
 void NavEKF2_core::CovariancePrediction()
 {
-    hal.util->perf_begin(_perf_CovariancePrediction);
     float windVelSigma; // wind velocity 1-sigma process noise - m/s
     float dAngBiasSigma;// delta angle bias 1-sigma process noise - rad/s
     float dVelBiasSigma;// delta velocity bias 1-sigma process noise - m/s
@@ -1326,7 +1319,6 @@ void NavEKF2_core::CovariancePrediction()
     // constrain diagonals to prevent ill-conditioning
     ConstrainVariances();
 
-    hal.util->perf_end(_perf_CovariancePrediction);
 }
 
 // zero specified range of rows in the state covariance matrix
@@ -1504,7 +1496,8 @@ Quaternion NavEKF2_core::calcQuatAndFieldStates(float roll, float pitch)
         float magHeading = atan2f(initMagNED.y, initMagNED.x);
 
         // get the magnetic declination
-        float magDecAng = use_compass() ? _ahrs->get_compass()->get_declination() : 0;
+        //TODO: use_compass() ? _ahrs->get_compass()->get_declination() :
+        float magDecAng = 0;//use_compass() ? _ahrs->get_compass()->get_declination() : 0;
 
         // calculate yaw angle rel to true north
         yaw = magDecAng - magHeading;

@@ -269,7 +269,7 @@ public:
     void  getFilterStatus(nav_filter_status &status) const;
 
     // send an EKF_STATUS_REPORT message to GCS
-    void send_status_report(mavlink_channel_t chan);
+//    void send_status_report(mavlink_channel_t chan);
 
     // provides the height limit to be observed by the control loops
     // returns false if no height limiting is required
@@ -379,7 +379,6 @@ private:
     typedef uint32_t Vector_u32_50[50];
 #endif
 
-    const AP_AHRS *_ahrs;
 
     // the states are available in two forms, either as a Vector31, or
     // broken down as individual elements. Both are equivalent (same
@@ -1162,15 +1161,15 @@ private:
     char prearm_fail_string[41];
 
     // performance counters
-    AP_HAL::Util::perf_counter_t  _perf_UpdateFilter;
-    AP_HAL::Util::perf_counter_t  _perf_CovariancePrediction;
-    AP_HAL::Util::perf_counter_t  _perf_FuseVelPosNED;
-    AP_HAL::Util::perf_counter_t  _perf_FuseMagnetometer;
-    AP_HAL::Util::perf_counter_t  _perf_FuseAirspeed;
-    AP_HAL::Util::perf_counter_t  _perf_FuseSideslip;
-    AP_HAL::Util::perf_counter_t  _perf_TerrainOffset;
-    AP_HAL::Util::perf_counter_t  _perf_FuseOptFlow;
-    AP_HAL::Util::perf_counter_t  _perf_test[10];
+//    AP_HAL::Util::perf_counter_t  _perf_UpdateFilter;
+//    AP_HAL::Util::perf_counter_t  _perf_CovariancePrediction;
+//    AP_HAL::Util::perf_counter_t  _perf_FuseVelPosNED;
+//    AP_HAL::Util::perf_counter_t  _perf_FuseMagnetometer;
+//    AP_HAL::Util::perf_counter_t  _perf_FuseAirspeed;
+//    AP_HAL::Util::perf_counter_t  _perf_FuseSideslip;
+//    AP_HAL::Util::perf_counter_t  _perf_TerrainOffset;
+//    AP_HAL::Util::perf_counter_t  _perf_FuseOptFlow;
+//    AP_HAL::Util::perf_counter_t  _perf_test[10];
 
     // timing statistics
     struct ekf_timing timing;

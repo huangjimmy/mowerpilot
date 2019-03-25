@@ -1,3 +1,4 @@
 add_subdirectory(AP_Common)
 add_subdirectory(AP_NavEKF2)
 add_subdirectory(AP_Math)
+add_subdirectory(AP_Param)

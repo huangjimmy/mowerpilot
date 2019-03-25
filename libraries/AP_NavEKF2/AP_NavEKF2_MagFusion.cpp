@@ -1,14 +1,9 @@
-#include <AP_HAL/AP_HAL.h>
 
 #include "AP_NavEKF2.h"
 #include "AP_NavEKF2_core.h"
-#include <AP_AHRS/AP_AHRS.h>
-#include <AP_Vehicle/AP_Vehicle.h>
-#include <GCS_MAVLink/GCS.h>
 
 #include <stdio.h>
 
-extern const AP_HAL::HAL& hal;
 
 /********************************************************
 *                   RESET FUNCTIONS                     *
@@ -109,7 +104,8 @@ void NavEKF2_core::controlMagYawReset()
 
             // send initial alignment status to console
             if (!yawAlignComplete) {
-                gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u ext nav yaw alignment complete",(unsigned)imu_index);
+                //TODO: send error somewhere
+                //gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u ext nav yaw alignment complete",(unsigned)imu_index);
             }
 
             // record the reset as complete and also record the in-flight reset as complete to stop further resets when height is gained
@@ -142,14 +138,17 @@ void NavEKF2_core::controlMagYawReset()
 
                 // send initial alignment status to console
                 if (!yawAlignComplete) {
-                    gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u initial yaw alignment complete",(unsigned)imu_index);
+                    //TODO: send error somewhere
+                    //gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u initial yaw alignment complete",(unsigned)imu_index);
                 }
 
                 // send in-flight yaw alignment status to console
                 if (finalResetRequest) {
-                    gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u in-flight yaw alignment complete",(unsigned)imu_index);
+                    //TODO: send error somewhere
+                   // gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u in-flight yaw alignment complete",(unsigned)imu_index);
                 } else if (interimResetRequest) {
-                    gcs().send_text(MAV_SEVERITY_WARNING, "EKF2 IMU%u ground mag anomaly, yaw re-aligned",(unsigned)imu_index);
+                    //TODO: send error somewhere
+                    //gcs().send_text(MAV_SEVERITY_WARNING, "EKF2 IMU%u ground mag anomaly, yaw re-aligned",(unsigned)imu_index);
                 }
 
                 // update the yaw reset completed status
@@ -200,7 +199,8 @@ void NavEKF2_core::realignYawGPS()
             ResetPosition();
 
             // send yaw alignment information to console
-            gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u yaw aligned to GPS velocity",(unsigned)imu_index);
+            //TODO: send error somewhere
+           // gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u yaw aligned to GPS velocity",(unsigned)imu_index);
 
             // zero the attitude covariances because the correlations will now be invalid
             zeroAttCovOnly();
@@ -229,8 +229,6 @@ void NavEKF2_core::realignYawGPS()
 // select fusion of magnetometer data
 void NavEKF2_core::SelectMagFusion()
 {
-    // start performance timer
-    hal.util->perf_begin(_perf_FuseMagnetometer);
 
     // clear the flag that lets other processes know that the expensive magnetometer fusion operation has been performed on that time step
     // used for load levelling
@@ -272,9 +270,8 @@ void NavEKF2_core::SelectMagFusion()
             }
             // fuse the three magnetometer componenents sequentially
             for (mag_state.obsIndex = 0; mag_state.obsIndex <= 2; mag_state.obsIndex++) {
-                hal.util->perf_begin(_perf_test[0]);
+
                 FuseMagnetometer();
-                hal.util->perf_end(_perf_test[0]);
                 // don't continue fusion if unhealthy
                 if (!magHealth) {
                     break;
@@ -311,8 +308,6 @@ void NavEKF2_core::SelectMagFusion()
         bodyMagFieldVar.z = P[21][21];
     }
 
-    // stop performance timer
-    hal.util->perf_end(_perf_FuseMagnetometer);
 }
 
 /*
@@ -322,7 +317,6 @@ void NavEKF2_core::SelectMagFusion()
 */
 void NavEKF2_core::FuseMagnetometer()
 {
-    hal.util->perf_begin(_perf_test[1]);
     
     // declarations
     ftype &q0 = mag_state.q0;
@@ -345,7 +339,6 @@ void NavEKF2_core::FuseMagnetometer()
     Vector6 SK_MY;
     Vector6 SK_MZ;
 
-    hal.util->perf_end(_perf_test[1]);
     
     // perform sequential fusion of magnetometer measurements.
     // this assumes that the errors in the different components are
@@ -357,7 +350,6 @@ void NavEKF2_core::FuseMagnetometer()
     if (obsIndex == 0)
     {
 
-        hal.util->perf_begin(_perf_test[2]);
 
         // copy required states to local variable names
         q0       = stateStruct.quat[0];
@@ -417,8 +409,6 @@ void NavEKF2_core::FuseMagnetometer()
             obsIndex = 1;
             faultStatus.bad_xmag = true;
 
-            hal.util->perf_end(_perf_test[2]);
-
             return;
         }
 
@@ -433,7 +423,6 @@ void NavEKF2_core::FuseMagnetometer()
             obsIndex = 2;
             faultStatus.bad_ymag = true;
 
-            hal.util->perf_end(_perf_test[2]);
 
             return;
         }
@@ -449,7 +438,6 @@ void NavEKF2_core::FuseMagnetometer()
             obsIndex = 3;
             faultStatus.bad_zmag = true;
 
-            hal.util->perf_end(_perf_test[2]);
 
             return;
         }
@@ -464,7 +452,6 @@ void NavEKF2_core::FuseMagnetometer()
 
         // if the magnetometer is unhealthy, do not proceed further
         if (!magHealth) {
-            hal.util->perf_end(_perf_test[2]);
             return;
         }
 
@@ -529,13 +516,11 @@ void NavEKF2_core::FuseMagnetometer()
         magFusePerformed = true;
         magFuseRequired = true;
 
-        hal.util->perf_end(_perf_test[2]);
 
     }
     else if (obsIndex == 1) // we are now fusing the Y measurement
     {
 
-        hal.util->perf_begin(_perf_test[3]);
 
         // calculate observation jacobians
         for (uint8_t i = 0; i<=stateIndexLim; i++) H_MAG[i] = 0.0f;
@@ -594,13 +579,10 @@ void NavEKF2_core::FuseMagnetometer()
         magFusePerformed = true;
         magFuseRequired = true;
 
-        hal.util->perf_end(_perf_test[3]);
 
     }
     else if (obsIndex == 2) // we are now fusing the Z measurement
     {
-
-        hal.util->perf_begin(_perf_test[4]);
 
         // calculate observation jacobians
         for (uint8_t i = 0; i<=stateIndexLim; i++) H_MAG[i] = 0.0f;
@@ -659,11 +641,9 @@ void NavEKF2_core::FuseMagnetometer()
         magFusePerformed = true;
         magFuseRequired = false;
 
-        hal.util->perf_end(_perf_test[4]);
 
     }
 
-    hal.util->perf_begin(_perf_test[5]);
 
     // correct the covariance P = (I - K*H)*P
     // take advantage of the empty columns in KH to reduce the
@@ -739,11 +719,9 @@ void NavEKF2_core::FuseMagnetometer()
             faultStatus.bad_zmag = true;
         }
         CovarianceInit();
-        hal.util->perf_end(_perf_test[5]);
         return;
     }
 
-    hal.util->perf_end(_perf_test[5]);
 
 }
 
@@ -811,7 +789,8 @@ void NavEKF2_core::fuseEulerYaw()
             // Use measured mag components rotated into earth frame to measure yaw
             Tbn_zeroYaw.from_euler(euler321.x, euler321.y, 0.0f);
             Vector3f magMeasNED = Tbn_zeroYaw*magDataDelayed.mag;
-            measured_yaw = wrap_PI(-atan2f(magMeasNED.y, magMeasNED.x) + _ahrs->get_compass()->get_declination());
+            //TODO: need alternative of __ahrs->get_compass()->get_declination()
+            measured_yaw = wrap_PI(-atan2f(magMeasNED.y, magMeasNED.x) + 0/*_ahrs->get_compass()->get_declination()*/);
         } else if (extNavUsedForYaw) {
             // Get the yaw angle  from the external vision data
             extNavDataDelayed.quat.to_euler(euler321.x, euler321.y, euler321.z);
@@ -857,7 +836,8 @@ void NavEKF2_core::fuseEulerYaw()
             // Use measured mag components rotated into earth frame to measure yaw
             Tbn_zeroYaw.from_euler312(euler312.x, euler312.y, 0.0f);
             Vector3f magMeasNED = Tbn_zeroYaw*magDataDelayed.mag;
-            measured_yaw = wrap_PI(-atan2f(magMeasNED.y, magMeasNED.x) + _ahrs->get_compass()->get_declination());
+            //TODO: need alternative of + _ahrs->get_compass()->get_declination()
+            measured_yaw = wrap_PI(-atan2f(magMeasNED.y, magMeasNED.x)/* + _ahrs->get_compass()->get_declination()*/);
         } else if (extNavUsedForYaw) {
             // Get the yaw angle  from the external vision data
             euler312 = extNavDataDelayed.quat.to_vector312();
@@ -1043,7 +1023,8 @@ void NavEKF2_core::FuseDeclination(float declErr)
     }
 
     // get the magnetic declination
-    float magDecAng = use_compass() ? _ahrs->get_compass()->get_declination() : 0;
+    //TODO: need alternative of _ahrs->get_compass()->get_declination()
+    float magDecAng = 0;//use_compass() ? _ahrs->get_compass()->get_declination() : 0;
 
     // Calculate the innovation
     float innovation = atan2f(magE , magN) - magDecAng;
@@ -1127,7 +1108,8 @@ void NavEKF2_core::alignMagStateDeclination()
     }
 
     // get the magnetic declination
-    float magDecAng = use_compass() ? _ahrs->get_compass()->get_declination() : 0;
+    //TODO: need + _ahrs->get_compass()->get_declination()
+    float magDecAng = /*use_compass() ? _ahrs->get_compass()->get_declination() :*/ 0;
 
     // rotate the NE values so that the declination matches the published value
     Vector3f initMagNED = stateStruct.earth_magfield;

@@ -17,10 +17,9 @@
  */
 
 
-#include <AP_HAL/AP_HAL.h>
+
 #include "AP_Common.h"
 
-extern const AP_HAL::HAL& hal;
 
 /*
   Return true if value is between lower and upper bound inclusive.

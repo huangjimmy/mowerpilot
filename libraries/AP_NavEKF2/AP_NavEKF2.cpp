@@ -1,9 +1,6 @@
-#include <AP_HAL/AP_HAL.h>
 
 #include "AP_NavEKF2_core.h"
-#include <AP_Vehicle/AP_Vehicle.h>
-#include <GCS_MAVLink/GCS.h>
-#include <AP_Logger/AP_Logger.h>
+#include "AP_NavEKF2.h"
 #include <new>
 
 /*
@@ -11,32 +8,34 @@
   APM_BUILD_DIRECTORY is taken from the main vehicle directory name
   where the code is built.
  */
-#if APM_BUILD_TYPE(APM_BUILD_ArduCopter) || APM_BUILD_TYPE(APM_BUILD_Replay)
-// copter defaults
-#define VELNE_M_NSE_DEFAULT     0.5f
-#define VELD_M_NSE_DEFAULT      0.7f
-#define POSNE_M_NSE_DEFAULT     1.0f
-#define ALT_M_NSE_DEFAULT       3.0f
-#define MAG_M_NSE_DEFAULT       0.05f
-#define GYRO_P_NSE_DEFAULT      3.0E-02f
-#define ACC_P_NSE_DEFAULT       6.0E-01f
-#define GBIAS_P_NSE_DEFAULT     1.0E-04f
-#define GSCALE_P_NSE_DEFAULT    5.0E-04f
-#define ABIAS_P_NSE_DEFAULT     5.0E-03f
-#define MAGB_P_NSE_DEFAULT      1.0E-04f
-#define MAGE_P_NSE_DEFAULT      1.0E-03f
-#define VEL_I_GATE_DEFAULT      500
-#define POS_I_GATE_DEFAULT      500
-#define HGT_I_GATE_DEFAULT      500
-#define MAG_I_GATE_DEFAULT      300
-#define MAG_CAL_DEFAULT         3
-#define GLITCH_RADIUS_DEFAULT   25
-#define FLOW_MEAS_DELAY         10
-#define FLOW_M_NSE_DEFAULT      0.25f
-#define FLOW_I_GATE_DEFAULT     300
-#define CHECK_SCALER_DEFAULT    100
+//#if APM_BUILD_TYPE(APM_BUILD_ArduCopter) || APM_BUILD_TYPE(APM_BUILD_Replay)
+//// copter defaults
+//#define VELNE_M_NSE_DEFAULT     0.5f
+//#define VELD_M_NSE_DEFAULT      0.7f
+//#define POSNE_M_NSE_DEFAULT     1.0f
+//#define ALT_M_NSE_DEFAULT       3.0f
+//#define MAG_M_NSE_DEFAULT       0.05f
+//#define GYRO_P_NSE_DEFAULT      3.0E-02f
+//#define ACC_P_NSE_DEFAULT       6.0E-01f
+//#define GBIAS_P_NSE_DEFAULT     1.0E-04f
+//#define GSCALE_P_NSE_DEFAULT    5.0E-04f
+//#define ABIAS_P_NSE_DEFAULT     5.0E-03f
+//#define MAGB_P_NSE_DEFAULT      1.0E-04f
+//#define MAGE_P_NSE_DEFAULT      1.0E-03f
+//#define VEL_I_GATE_DEFAULT      500
+//#define POS_I_GATE_DEFAULT      500
+//#define HGT_I_GATE_DEFAULT      500
+//#define MAG_I_GATE_DEFAULT      300
+//#define MAG_CAL_DEFAULT         3
+//#define GLITCH_RADIUS_DEFAULT   25
+//#define FLOW_MEAS_DELAY         10
+//#define FLOW_M_NSE_DEFAULT      0.25f
+//#define FLOW_I_GATE_DEFAULT     300
+//#define CHECK_SCALER_DEFAULT    100
+//
+//#elif APM_BUILD_TYPE(APM_BUILD_APMrover2)
+// TODO: use rover2 defaults
 
-#elif APM_BUILD_TYPE(APM_BUILD_APMrover2)
 // rover defaults
 #define VELNE_M_NSE_DEFAULT     0.5f
 #define VELD_M_NSE_DEFAULT      0.7f
@@ -61,32 +60,32 @@
 #define FLOW_I_GATE_DEFAULT     300
 #define CHECK_SCALER_DEFAULT    100
 
-#elif APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-// plane defaults
-#define VELNE_M_NSE_DEFAULT     0.5f
-#define VELD_M_NSE_DEFAULT      0.7f
-#define POSNE_M_NSE_DEFAULT     1.0f
-#define ALT_M_NSE_DEFAULT       3.0f
-#define MAG_M_NSE_DEFAULT       0.05f
-#define GYRO_P_NSE_DEFAULT      3.0E-02f
-#define ACC_P_NSE_DEFAULT       6.0E-01f
-#define GBIAS_P_NSE_DEFAULT     1.0E-04f
-#define GSCALE_P_NSE_DEFAULT    5.0E-04f
-#define ABIAS_P_NSE_DEFAULT     5.0E-03f
-#define MAGB_P_NSE_DEFAULT      1.0E-04f
-#define MAGE_P_NSE_DEFAULT      1.0E-03f
-#define VEL_I_GATE_DEFAULT      500
-#define POS_I_GATE_DEFAULT      500
-#define HGT_I_GATE_DEFAULT      500
-#define MAG_I_GATE_DEFAULT      300
-#define MAG_CAL_DEFAULT         0
-#define GLITCH_RADIUS_DEFAULT   25
-#define FLOW_MEAS_DELAY         10
-#define FLOW_M_NSE_DEFAULT      0.25f
-#define FLOW_I_GATE_DEFAULT     300
-#define CHECK_SCALER_DEFAULT    150
-
-#else
+//#elif APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+//// plane defaults
+//#define VELNE_M_NSE_DEFAULT     0.5f
+//#define VELD_M_NSE_DEFAULT      0.7f
+//#define POSNE_M_NSE_DEFAULT     1.0f
+//#define ALT_M_NSE_DEFAULT       3.0f
+//#define MAG_M_NSE_DEFAULT       0.05f
+//#define GYRO_P_NSE_DEFAULT      3.0E-02f
+//#define ACC_P_NSE_DEFAULT       6.0E-01f
+//#define GBIAS_P_NSE_DEFAULT     1.0E-04f
+//#define GSCALE_P_NSE_DEFAULT    5.0E-04f
+//#define ABIAS_P_NSE_DEFAULT     5.0E-03f
+//#define MAGB_P_NSE_DEFAULT      1.0E-04f
+//#define MAGE_P_NSE_DEFAULT      1.0E-03f
+//#define VEL_I_GATE_DEFAULT      500
+//#define POS_I_GATE_DEFAULT      500
+//#define HGT_I_GATE_DEFAULT      500
+//#define MAG_I_GATE_DEFAULT      300
+//#define MAG_CAL_DEFAULT         0
+//#define GLITCH_RADIUS_DEFAULT   25
+//#define FLOW_MEAS_DELAY         10
+//#define FLOW_M_NSE_DEFAULT      0.25f
+//#define FLOW_I_GATE_DEFAULT     300
+//#define CHECK_SCALER_DEFAULT    150
+//
+//#else
 // build type not specified, use copter defaults
 #define VELNE_M_NSE_DEFAULT     0.5f
 #define VELD_M_NSE_DEFAULT      0.7f
@@ -111,9 +110,8 @@
 #define FLOW_I_GATE_DEFAULT     300
 #define CHECK_SCALER_DEFAULT    100
 
-#endif // APM_BUILD_DIRECTORY
+//#endif // APM_BUILD_DIRECTORY
 
-extern const AP_HAL::HAL& hal;
 
 // Define tuning parameters
 const AP_Param::GroupInfo NavEKF2::var_info[] = {
@@ -556,9 +554,7 @@ const AP_Param::GroupInfo NavEKF2::var_info[] = {
     AP_GROUPEND
 };
 
-NavEKF2::NavEKF2(const AP_AHRS *ahrs, const RangeFinder &rng) :
-    _ahrs(ahrs),
-    _rng(rng)
+NavEKF2::NavEKF2()
 {
     AP_Param::setup_object_defaults(this, var_info);
 }
@@ -571,22 +567,22 @@ void NavEKF2::check_log_write(void)
     if (!have_ekf_logging()) {
         return;
     }
-    if (logging.log_compass) {
-        AP::logger().Write_Compass(imuSampleTime_us);
-        logging.log_compass = false;
-    }
-    if (logging.log_gps) {
-        AP::logger().Write_GPS(AP::gps().primary_sensor(), imuSampleTime_us);
-        logging.log_gps = false;
-    }
-    if (logging.log_baro) {
-        AP::logger().Write_Baro(imuSampleTime_us);
-        logging.log_baro = false;
-    }
-    if (logging.log_imu) {
-        AP::logger().Write_IMUDT(imuSampleTime_us, _logging_mask.get());
-        logging.log_imu = false;
-    }
+//    if (logging.log_compass) {
+//        AP::logger().Write_Compass(imuSampleTime_us);
+//        logging.log_compass = false;
+//    }
+//    if (logging.log_gps) {
+//        AP::logger().Write_GPS(AP::gps().primary_sensor(), imuSampleTime_us);
+//        logging.log_gps = false;
+//    }
+//    if (logging.log_baro) {
+//        AP::logger().Write_Baro(imuSampleTime_us);
+//        logging.log_baro = false;
+//    }
+//    if (logging.log_imu) {
+//        AP::logger().Write_IMUDT(imuSampleTime_us, _logging_mask.get());
+//        logging.log_imu = false;
+//    }
 
     // this is an example of an ad-hoc log in EKF
     // AP::logger().Write("NKA", "TimeUS,X", "Qf", AP_HAL::micros64(), (double)2.4f);
@@ -599,26 +595,28 @@ bool NavEKF2::InitialiseFilter(void)
     if (_enable == 0) {
         return false;
     }
-    const AP_InertialSensor &ins = AP::ins();
 
-    imuSampleTime_us = AP_HAL::micros64();
+
+    //TODO: need alternative of micros64
+    imuSampleTime_us = 0;//AP_HAL::micros64();
 
     // remember expected frame time
-    _frameTimeUsec = 1e6 / ins.get_sample_rate();
+    _frameTimeUsec = 1e6 / 260;//ins.get_sample_rate();
 
     // expected number of IMU frames per prediction
     _framesPerPrediction = uint8_t((EKF_TARGET_DT / (_frameTimeUsec * 1.0e-6) + 0.5));
 
     // see if we will be doing logging
-    AP_Logger *dataflash = AP_Logger::get_singleton();
-    if (dataflash != nullptr) {
-        logging.enabled = dataflash->log_replay();
-    }
+//    if (dataflash != nullptr) {
+//        logging.enabled = dataflash->log_replay();
+//    }
+    logging.enabled = true;
     
     if (core == nullptr) {
 
         // don't run multiple filters for 1 IMU
-        uint8_t mask = (1U<<ins.get_accel_count())-1;
+        //TODO: need alternative of ins.get_accel_count()
+        uint8_t mask = (1U<</*ins.get_accel_count()*/8)-1;
         _imuMask.set(_imuMask.get() & mask);
         
         // count IMUs from mask
@@ -630,17 +628,17 @@ bool NavEKF2::InitialiseFilter(void)
         }
 
         // check if there is enough memory to create the EKF cores
-        if (hal.util->available_memory() < sizeof(NavEKF2_core)*num_cores + 4096) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "NavEKF2: not enough memory");
-            _enable.set(0);
-            return false;
-        }
+//        if (hal.util->available_memory() < sizeof(NavEKF2_core)*num_cores + 4096) {
+//            gcs().send_text(MAV_SEVERITY_CRITICAL, "NavEKF2: not enough memory");
+//            _enable.set(0);
+//            return false;
+//        }
 
         // try to allocate from CCM RAM, fallback to Normal RAM if not available or full
-        core = (NavEKF2_core*)hal.util->malloc_type(sizeof(NavEKF2_core)*num_cores, AP_HAL::Util::MEM_FAST);
+        core = (NavEKF2_core*)calloc(1, sizeof(NavEKF2_core)*num_cores);
         if (core == nullptr) {
             _enable.set(0);
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "NavEKF2: allocation failed");
+//            gcs().send_text(MAV_SEVERITY_CRITICAL, "NavEKF2: allocation failed");
             return false;
         }
         for (uint8_t i = 0; i < num_cores; i++) {
@@ -685,10 +683,10 @@ void NavEKF2::UpdateFilter(void)
     if (!core) {
         return;
     }
-
-    imuSampleTime_us = AP_HAL::micros64();
-    
-    const AP_InertialSensor &ins = AP::ins();
+//
+//    imuSampleTime_us = AP_HAL::micros64();
+//
+//    const AP_InertialSensor &ins = AP::ins();
 
     bool statePredictEnabled[num_cores];
     for (uint8_t i=0; i<num_cores; i++) {
@@ -696,12 +694,13 @@ void NavEKF2::UpdateFilter(void)
         // have already used more than 1/3 of the CPU budget for this
         // loop then suppress the prediction step. This allows
         // multiple EKF instances to cooperate on scheduling
-        if (core[i].getFramesSincePredict() < (_framesPerPrediction+3) &&
-            (AP_HAL::micros() - ins.get_last_update_usec()) > _frameTimeUsec/3) {
-            statePredictEnabled[i] = false;
-        } else {
-            statePredictEnabled[i] = true;
-        }
+//        if (core[i].getFramesSincePredict() < (_framesPerPrediction+3) &&
+//            (AP_HAL::micros() - ins.get_last_update_usec()) > _frameTimeUsec/3) {
+//            statePredictEnabled[i] = false;
+//        } else {
+//            statePredictEnabled[i] = true;
+//        }
+        statePredictEnabled[i] = true;
         core[i].UpdateFilter(statePredictEnabled[i]);
     }
 
@@ -1228,12 +1227,12 @@ void  NavEKF2::getFilterGpsStatus(int8_t instance, nav_gps_status &status) const
 }
 
 // send an EKF_STATUS_REPORT message to GCS
-void NavEKF2::send_status_report(mavlink_channel_t chan)
-{
-    if (core) {
-        core[primary].send_status_report(chan);
-    }
-}
+//void NavEKF2::send_status_report(mavlink_channel_t chan)
+//{
+//    if (core) {
+//        core[primary].send_status_report(chan);
+//    }
+//}
 
 // provides the height limit to be observed by the control loops
 // returns false if no height limiting is required

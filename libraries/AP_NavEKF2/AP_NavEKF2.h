@@ -24,12 +24,7 @@
 
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
-#include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_NavEKF/AP_Nav_Common.h>
-#include <AP_Baro/AP_Baro.h>
-#include <AP_Airspeed/AP_Airspeed.h>
-#include <AP_Compass/AP_Compass.h>
-#include <AP_RangeFinder/AP_RangeFinder.h>
 
 class NavEKF2_core;
 class AP_AHRS;
@@ -38,7 +33,7 @@ class NavEKF2 {
     friend class NavEKF2_core;
 
 public:
-    NavEKF2(const AP_AHRS *ahrs, const RangeFinder &rng);
+    NavEKF2();
 
     /* Do not allow copies */
     NavEKF2(const NavEKF2 &other) = delete;
@@ -285,7 +280,7 @@ public:
     void  getFilterStatus(int8_t instance, nav_filter_status &status) const;
 
     // send an EKF_STATUS_REPORT message to GCS
-    void send_status_report(mavlink_channel_t chan);
+    //void send_status_report(mavlink_channel_t chan);
 
     // provides the height limit to be observed by the control loops
     // returns false if no height limiting is required
@@ -340,8 +335,6 @@ private:
     uint8_t num_cores; // number of allocated cores
     uint8_t primary;   // current primary core
     NavEKF2_core *core = nullptr;
-    const AP_AHRS *_ahrs;
-    const RangeFinder &_rng;
 
     uint32_t _frameTimeUsec;        // time per IMU frame
     uint8_t  _framesPerPrediction;  // expected number of IMU frames per prediction

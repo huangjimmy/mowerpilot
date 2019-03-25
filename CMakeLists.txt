@@ -24,4 +24,4 @@ include_directories(libraries)
 
 add_executable(Main main.cpp)
 
-target_link_libraries(Main AP_Common AP_NavEKF2)
+target_link_libraries(Main AP_Common AP_Param AP_NavEKF2 AP_Math)

@@ -1,14 +1,9 @@
-#include <AP_HAL/AP_HAL.h>
-
 
 #include "AP_NavEKF2.h"
 #include "AP_NavEKF2_core.h"
-#include <AP_AHRS/AP_AHRS.h>
-#include <AP_Vehicle/AP_Vehicle.h>
 
 #include <stdio.h>
 
-extern const AP_HAL::HAL& hal;
 
 // reset the body axis gyro bias states to zero and re-initialise the corresponding covariances
 // Assume that the calibration is performed to an accuracy of 0.5 deg/sec which will require averaging under static conditions

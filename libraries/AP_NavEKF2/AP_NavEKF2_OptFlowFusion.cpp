@@ -1,13 +1,9 @@
-#include <AP_HAL/AP_HAL.h>
 
 #include "AP_NavEKF2.h"
 #include "AP_NavEKF2_core.h"
-#include <AP_AHRS/AP_AHRS.h>
-#include <AP_Vehicle/AP_Vehicle.h>
 
 #include <stdio.h>
 
-extern const AP_HAL::HAL& hal;
 
 /********************************************************
 *                   RESET FUNCTIONS                     *
@@ -30,8 +26,6 @@ void NavEKF2_core::SelectFlowFusion()
         optFlowFusionDelayed = false;
     }
 
-    // start performance timer
-    hal.util->perf_begin(_perf_FuseOptFlow);
     // Perform Data Checks
     // Check if the optical flow data is still valid
     flowDataValid = ((imuSampleTime_ms - flowValidMeaTime_ms) < 1000);
@@ -68,8 +62,6 @@ void NavEKF2_core::SelectFlowFusion()
         flowDataToFuse = false;
     }
 
-    // stop the performance timer
-    hal.util->perf_end(_perf_FuseOptFlow);
 }
 
 /*
@@ -78,8 +70,6 @@ The filter can fuse motion compensated optical flow rates and range finder measu
 */
 void NavEKF2_core::EstimateTerrainOffset()
 {
-    // start performance timer
-    hal.util->perf_begin(_perf_TerrainOffset);
 
     // constrain height above ground to be above range measured on ground
     float heightAboveGndEst = MAX((terrainState - stateStruct.position.z), rngOnGnd);
@@ -248,8 +238,6 @@ void NavEKF2_core::EstimateTerrainOffset()
         }
     }
 
-    // stop the performance timer
-    hal.util->perf_end(_perf_TerrainOffset);
 }
 
 /*

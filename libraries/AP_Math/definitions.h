@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#include <AP_HAL/AP_HAL.h>
-
 #ifdef M_PI
 # undef M_PI
 #endif

@@ -24,10 +24,6 @@
 #include <stdint.h>
 #include <cmath>
 
-#include <AP_HAL/AP_HAL.h>
-#include <AP_HAL/utility/RingBuffer.h>
-#include <StorageManager/StorageManager.h>
-
 #include "float.h"
 
 #define AP_MAX_NAME_SIZE 16
@@ -609,7 +605,6 @@ private:
     // send a parameter to all GCS instances
     void send_parameter(const char *name, enum ap_var_type param_header_type, uint8_t idx) const;
 
-    static StorageAccess        _storage;
     static uint16_t             _num_vars;
     static uint16_t             _parameter_count;
     static const struct Info *  _var_info;
@@ -637,7 +632,7 @@ private:
         AP_Param *param;
         bool force_save;
     };
-    static ObjectBuffer<struct param_save> save_queue;
+//    static ObjectBuffer<struct param_save> save_queue;
     static bool registered_save_handler;
 
     // background function for saving parameters

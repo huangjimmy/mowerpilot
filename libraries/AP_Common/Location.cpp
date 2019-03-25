@@ -4,12 +4,10 @@
 
 #include "Location.h"
 
-#include <AP_AHRS/AP_AHRS.h>
-#include <AP_Terrain/AP_Terrain.h>
+//#include <AP_Terrain/AP_Terrain.h>
 
-extern const AP_HAL::HAL& hal;
 
-AP_Terrain *Location::_terrain = nullptr;
+//AP_Terrain *Location::_terrain = nullptr;
 
 /// constructors
 Location::Location()
@@ -43,11 +41,12 @@ Location::Location(const Vector3f &ekf_offset_neu)
 
     // calculate lat, lon
     Location ekf_origin;
-    if (AP::ahrs().get_origin(ekf_origin)) {
-        lat = ekf_origin.lat;
-        lng = ekf_origin.lng;
-        offset(ekf_offset_neu.x / 100.0f, ekf_offset_neu.y / 100.0f);
-    }
+    //TODO: need to figure out what the below code do
+//    if (AP::ahrs().get_origin(ekf_origin)) {
+//        lat = ekf_origin.lat;
+//        lng = ekf_origin.lng;
+//        offset(ekf_offset_neu.x / 100.0f, ekf_offset_neu.y / 100.0f);
+//    }
 }
 
 void Location::set_alt_cm(int32_t alt_cm, AltFrame frame)
@@ -133,18 +132,18 @@ bool Location::get_alt_cm(AltFrame desired_frame, int32_t &ret_alt_cm) const
             alt_abs = alt;
             break;
         case AltFrame::ABOVE_HOME:
-            if (!AP::ahrs().home_is_set()) {
-                return false;
-            }
-            alt_abs = alt + AP::ahrs().get_home().alt;
+//            if (!AP::ahrs().home_is_set()) {
+//                return false;
+//            }
+            alt_abs = alt;// + AP::ahrs().get_home().alt;
             break;
         case AltFrame::ABOVE_ORIGIN:
             {
                 // fail if we cannot get ekf origin
                 Location ekf_origin;
-                if (!AP::ahrs().get_origin(ekf_origin)) {
-                    return false;
-                }
+//                if (!AP::ahrs().get_origin(ekf_origin)) {
+//                    return false;
+//                }
                 alt_abs = alt + ekf_origin.alt;
             }
             break;
@@ -159,18 +158,18 @@ bool Location::get_alt_cm(AltFrame desired_frame, int32_t &ret_alt_cm) const
             ret_alt_cm = alt_abs;
             return true;
         case AltFrame::ABOVE_HOME:
-            if (!AP::ahrs().home_is_set()) {
-                return false;
-            }
-            ret_alt_cm = alt_abs - AP::ahrs().get_home().alt;
+//            if (!AP::ahrs().home_is_set()) {
+//                return false;
+//            }
+            ret_alt_cm = alt_abs ;//- AP::ahrs().get_home().alt;
             return true;
         case AltFrame::ABOVE_ORIGIN:
             {
                 // fail if we cannot get ekf origin
                 Location ekf_origin;
-                if (!AP::ahrs().get_origin(ekf_origin)) {
-                    return false;
-                }
+//                if (!AP::ahrs().get_origin(ekf_origin)) {
+//                    return false;
+//                }
                 ret_alt_cm = alt_abs - ekf_origin.alt;
                 return true;
             }
@@ -184,9 +183,9 @@ bool Location::get_alt_cm(AltFrame desired_frame, int32_t &ret_alt_cm) const
 bool Location::get_vector_xy_from_origin_NE(Vector2f &vec_ne) const
 {
     Location ekf_origin;
-    if (!AP::ahrs().get_origin(ekf_origin)) {
-        return false;
-    }
+//    if (!AP::ahrs().get_origin(ekf_origin)) {
+//        return false;
+//    }
     vec_ne.x = (lat-ekf_origin.lat) * LATLON_TO_CM;
     vec_ne.y = (lng-ekf_origin.lng) * LATLON_TO_CM * ekf_origin.longitude_scale();
     return true;

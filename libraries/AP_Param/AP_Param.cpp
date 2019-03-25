@@ -21,20 +21,15 @@
 
 /// @file   AP_Param.cpp
 /// @brief  The AP variable store.
-#include "AP_Param.h"
 
 #include <cmath>
 #include <string.h>
 
 #include <AP_Common/AP_Common.h>
-#include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
-#include <GCS_MAVLink/GCS.h>
-#include <StorageManager/StorageManager.h>
-#include <AP_BoardConfig/AP_BoardConfig.h>
+#include "AP_Param.h"
 #include <stdio.h>
 
-extern const AP_HAL::HAL &hal;
 
 #define ENABLE_DEBUG 1
 
@@ -69,7 +64,7 @@ const AP_Param::Info *AP_Param::_var_info;
 struct AP_Param::param_override *AP_Param::param_overrides = nullptr;
 uint16_t AP_Param::num_param_overrides = 0;
 
-ObjectBuffer<AP_Param::param_save> AP_Param::save_queue{30};
+//ObjectBuffer<AP_Param::param_save> AP_Param::save_queue{30};
 bool AP_Param::registered_save_handler;
 
 // we need a dummy object for the parameter save callback
@@ -88,7 +83,7 @@ const AP_Param::param_defaults_struct AP_Param::param_defaults_data = {
 };
 
 // storage object
-StorageAccess AP_Param::_storage(StorageManager::StorageParam);
+//StorageAccess AP_Param::_storage(StorageManager::StorageParam);
 
 // flags indicating frame type
 uint16_t AP_Param::_frame_type_flags;
@@ -96,7 +91,7 @@ uint16_t AP_Param::_frame_type_flags;
 // write to EEPROM
 void AP_Param::eeprom_write_check(const void *ptr, uint16_t ofs, uint8_t size)
 {
-    _storage.write_block(ofs, ptr, size);
+//    _storage.write_block(ofs, ptr, size);
 }
 
 bool AP_Param::_hide_disabled_groups = true;
@@ -305,7 +300,7 @@ bool AP_Param::setup(void)
     struct EEPROM_header hdr;
 
     // check the header
-    _storage.read_block(&hdr, 0, sizeof(hdr));
+//    _storage.read_block(&hdr, 0, sizeof(hdr));
     if (hdr.magic[0] != k_EEPROM_magic0 ||
         hdr.magic[1] != k_EEPROM_magic1 ||
         hdr.revision != k_EEPROM_revision) {
@@ -675,22 +670,22 @@ bool AP_Param::scan(const AP_Param::Param_header *target, uint16_t *pofs)
 {
     struct Param_header phdr;
     uint16_t ofs = sizeof(AP_Param::EEPROM_header);
-    while (ofs < _storage.size()) {
-        _storage.read_block(&phdr, ofs, sizeof(phdr));
-        if (phdr.type == target->type &&
-            get_key(phdr) == get_key(*target) &&
-            phdr.group_element == target->group_element) {
-            // found it
-            *pofs = ofs;
-            return true;
-        }
-        if (is_sentinal(phdr)) {
-            // we've reached the sentinal
-            *pofs = ofs;
-            return false;
-        }
-        ofs += type_size((enum ap_var_type)phdr.type) + sizeof(phdr);
-    }
+//    while (ofs < _storage.size()) {
+//        _storage.read_block(&phdr, ofs, sizeof(phdr));
+//        if (phdr.type == target->type &&
+//            get_key(phdr) == get_key(*target) &&
+//            phdr.group_element == target->group_element) {
+//            // found it
+//            *pofs = ofs;
+//            return true;
+//        }
+//        if (is_sentinal(phdr)) {
+//            // we've reached the sentinal
+//            *pofs = ofs;
+//            return false;
+//        }
+//        ofs += type_size((enum ap_var_type)phdr.type) + sizeof(phdr);
+//    }
     *pofs = 0xffff;
     Debug("scan past end of eeprom");
     return false;
@@ -1051,7 +1046,7 @@ void AP_Param::save_sync(bool force_save)
             v2 = get_default_value(this, &info->def_value);
         }
         if (is_equal(v1,v2) && !force_save) {
-            gcs().send_parameter_value(name, (enum ap_var_type)info->type, v2);
+//            gcs().send_parameter_value(name, (enum ap_var_type)info->type, v2);
             return;
         }
         if (!force_save &&
@@ -1059,16 +1054,16 @@ void AP_Param::save_sync(bool force_save)
              (fabsf(v1-v2) < 0.0001f*fabsf(v1)))) {
             // for other than 32 bit integers, we accept values within
             // 0.01 percent of the current value as being the same
-            gcs().send_parameter_value(name, (enum ap_var_type)info->type, v2);
+//            gcs().send_parameter_value(name, (enum ap_var_type)info->type, v2);
             return;
         }
     }
 
-    if (ofs+type_size((enum ap_var_type)phdr.type)+2*sizeof(phdr) >= _storage.size()) {
-        // we are out of room for saving variables
-        hal.console->printf("EEPROM full\n");
-        return;
-    }
+//    if (ofs+type_size((enum ap_var_type)phdr.type)+2*sizeof(phdr) >= _storage.size()) {
+//        // we are out of room for saving variables
+//        hal.console->printf("EEPROM full\n");
+//        return;
+//    }
 
     // write a new sentinal, then the data, then the header
     write_sentinal(ofs + sizeof(phdr) + type_size((enum ap_var_type)phdr.type));
@@ -1086,18 +1081,18 @@ void AP_Param::save(bool force_save)
     struct param_save p;
     p.param = this;
     p.force_save = force_save;
-    while (!save_queue.push(p)) {
-        // if we can't save to the queue
-        if (hal.util->get_soft_armed()) {
-            // if we are armed then don't sleep, instead we lose the
-            // parameter save
-            return;
-        }
-        // when we are disarmed then loop waiting for a slot to become
-        // available. This guarantees completion for large parameter
-        // set loads
-        hal.scheduler->delay_microseconds(500);
-    }
+//    while (!save_queue.push(p)) {
+//        // if we can't save to the queue
+//        if (hal.util->get_soft_armed()) {
+//            // if we are armed then don't sleep, instead we lose the
+//            // parameter save
+//            return;
+//        }
+//        // when we are disarmed then loop waiting for a slot to become
+//        // available. This guarantees completion for large parameter
+//        // set loads
+//        hal.scheduler->delay_microseconds(500);
+//    }
 }
 
 /*
@@ -1106,9 +1101,9 @@ void AP_Param::save(bool force_save)
 void AP_Param::save_io_handler(void)
 {
     struct param_save p;
-    while (save_queue.pop(p)) {
-        p.param->save_sync(p.force_save);
-    }
+//    while (save_queue.pop(p)) {
+//        p.param->save_sync(p.force_save);
+//    }
 }
 
 /*
@@ -1117,9 +1112,9 @@ void AP_Param::save_io_handler(void)
 void AP_Param::flush(void)
 {
     uint16_t counter = 200; // 2 seconds max
-    while (counter-- && save_queue.available()) {
-        hal.scheduler->delay(10);
-    }
+//    while (counter-- && save_queue.available()) {
+//        hal.scheduler->delay(10);
+//    }
 }
 
 // Load the variable from EEPROM, if supported
@@ -1183,7 +1178,7 @@ bool AP_Param::load(void)
     }
 
     // found it
-    _storage.read_block(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
+//    _storage.read_block(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
     return true;
 }
 
@@ -1329,28 +1324,28 @@ bool AP_Param::load_all()
 
     if (!registered_save_handler) {
         registered_save_handler = true;
-        hal.scheduler->register_io_process(FUNCTOR_BIND((&save_dummy), &AP_Param::save_io_handler, void));
+//        hal.scheduler->register_io_process(FUNCTOR_BIND((&save_dummy), &AP_Param::save_io_handler, void));
     }
     
-    while (ofs < _storage.size()) {
-        _storage.read_block(&phdr, ofs, sizeof(phdr));
-        // note that this is an || not an && for robustness
-        // against power off while adding a variable
-        if (is_sentinal(phdr)) {
-            // we've reached the sentinal
-            return true;
-        }
-
-        const struct AP_Param::Info *info;
-        void *ptr;
-
-        info = find_by_header(phdr, &ptr);
-        if (info != nullptr) {
-            _storage.read_block(ptr, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
-        }
-
-        ofs += type_size((enum ap_var_type)phdr.type) + sizeof(phdr);
-    }
+//    while (ofs < _storage.size()) {
+//        _storage.read_block(&phdr, ofs, sizeof(phdr));
+//        // note that this is an || not an && for robustness
+//        // against power off while adding a variable
+//        if (is_sentinal(phdr)) {
+//            // we've reached the sentinal
+//            return true;
+//        }
+//
+//        const struct AP_Param::Info *info;
+//        void *ptr;
+//
+//        info = find_by_header(phdr, &ptr);
+//        if (info != nullptr) {
+//            _storage.read_block(ptr, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
+//        }
+//
+//        ofs += type_size((enum ap_var_type)phdr.type) + sizeof(phdr);
+//    }
 
     // we didn't find the sentinal
     Debug("no sentinal in load_all");
@@ -1399,7 +1394,7 @@ void AP_Param::load_object_from_eeprom(const void *object_pointer, const struct 
     _parameter_count = 0;
     
     if (!find_key_by_pointer(object_pointer, key)) {
-        hal.console->printf("ERROR: Unable to find param pointer\n");
+//        hal.console->printf("ERROR: Unable to find param pointer\n");
         return;
     }
     
@@ -1415,28 +1410,28 @@ void AP_Param::load_object_from_eeprom(const void *object_pointer, const struct 
             }
         }
         uint16_t ofs = sizeof(AP_Param::EEPROM_header);
-        while (ofs < _storage.size()) {
-            _storage.read_block(&phdr, ofs, sizeof(phdr));
-            // note that this is an || not an && for robustness
-            // against power off while adding a variable
-            if (is_sentinal(phdr)) {
-                // we've reached the sentinal
-                break;
-            }
-            if (get_key(phdr) == key) {
-                const struct AP_Param::Info *info;
-                void *ptr;
-                
-                info = find_by_header(phdr, &ptr);
-                if (info != nullptr) {
-                    if ((ptrdiff_t)ptr == ((ptrdiff_t)object_pointer)+group_info[i].offset) {
-                        _storage.read_block(ptr, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
-                        break;
-                    }
-                }
-            }
-            ofs += type_size((enum ap_var_type)phdr.type) + sizeof(phdr);
-        }
+//        while (ofs < _storage.size()) {
+//            _storage.read_block(&phdr, ofs, sizeof(phdr));
+//            // note that this is an || not an && for robustness
+//            // against power off while adding a variable
+//            if (is_sentinal(phdr)) {
+//                // we've reached the sentinal
+//                break;
+//            }
+//            if (get_key(phdr) == key) {
+//                const struct AP_Param::Info *info;
+//                void *ptr;
+//
+//                info = find_by_header(phdr, &ptr);
+//                if (info != nullptr) {
+//                    if ((ptrdiff_t)ptr == ((ptrdiff_t)object_pointer)+group_info[i].offset) {
+//                        _storage.read_block(ptr, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
+//                        break;
+//                    }
+//                }
+//            }
+//            ofs += type_size((enum ap_var_type)phdr.type) + sizeof(phdr);
+//        }
     }
 }
 
@@ -1675,7 +1670,7 @@ bool AP_Param::find_old_parameter(const struct ConversionInfo *info, AP_Param *v
     }
 
     // load the old value from EEPROM
-    _storage.read_block(value, pofs+sizeof(header), type_size((enum ap_var_type)header.type));
+//    _storage.read_block(value, pofs+sizeof(header), type_size((enum ap_var_type)header.type));
     return true;
 }
 
@@ -1700,7 +1695,7 @@ void AP_Param::convert_old_parameter(const struct ConversionInfo *info, float sc
     AP_Param *ap2;
     ap2 = find(&info->new_name[0], &ptype);
     if (ap2 == nullptr) {
-        hal.console->printf("Unknown conversion '%s'\n", info->new_name);
+//        hal.console->printf("Unknown conversion '%s'\n", info->new_name);
         return;
     }
 
@@ -1734,7 +1729,7 @@ void AP_Param::convert_old_parameter(const struct ConversionInfo *info, float sc
         }
     } else {
         // can't do vector<->scalar conversion, or different vector types
-        hal.console->printf("Bad conversion type '%s'\n", info->new_name);
+//        hal.console->printf("Bad conversion type '%s'\n", info->new_name);
     }
 }
 #pragma GCC diagnostic pop
@@ -2040,7 +2035,7 @@ void AP_Param::load_embedded_param_defaults(bool last_pass)
 
     param_overrides = (struct param_override *)malloc(sizeof(struct param_override)*num_defaults);
     if (param_overrides == nullptr) {
-        AP_HAL::panic("AP_Param: Failed to allocate overrides");
+//        AP_HAL::panic("AP_Param: Failed to allocate overrides");
         return;
     }
     
@@ -2082,9 +2077,9 @@ void AP_Param::load_embedded_param_defaults(bool last_pass)
             if (last_pass) {
                 ::printf("Ignored unknown param %s from embedded region (offset=%u)\n",
                          pname, unsigned(ptr - param_defaults_data.data));
-                hal.console->printf(
-                         "Ignored unknown param %s from embedded region (offset=%u)\n",
-                         pname, unsigned(ptr - param_defaults_data.data));
+//                hal.console->printf(
+//                         "Ignored unknown param %s from embedded region (offset=%u)\n",
+//                         pname, unsigned(ptr - param_defaults_data.data));
             }
             continue;
         }
@@ -2123,7 +2118,7 @@ void AP_Param::send_parameter(const char *name, enum ap_var_type var_type, uint8
     }
     if (var_type != AP_PARAM_VECTOR3F) {
         // nice and simple for scalar types
-        gcs().send_parameter_value(name, var_type, cast_to_float(var_type));
+//        gcs().send_parameter_value(name, var_type, cast_to_float(var_type));
         return;
     }
 
@@ -2138,11 +2133,11 @@ void AP_Param::send_parameter(const char *name, enum ap_var_type var_type, uint8
     char &name_axis = name2[strlen(name)-1];
     
     name_axis = 'X';
-    gcs().send_parameter_value(name2, AP_PARAM_FLOAT, v.x);
+//    gcs().send_parameter_value(name2, AP_PARAM_FLOAT, v.x);
     name_axis = 'Y';
-    gcs().send_parameter_value(name2, AP_PARAM_FLOAT, v.y);
+//    gcs().send_parameter_value(name2, AP_PARAM_FLOAT, v.y);
     name_axis = 'Z';
-    gcs().send_parameter_value(name2, AP_PARAM_FLOAT, v.z);
+//    gcs().send_parameter_value(name2, AP_PARAM_FLOAT, v.z);
 }
 
 /*
@@ -2208,7 +2203,7 @@ void AP_Param::set_defaults_from_table(const struct defaults_table_struct *table
         if (!AP_Param::set_default_by_name(table[i].name, table[i].value)) {
             char *buf = nullptr;
             if (asprintf(&buf, "param deflt fail:%s", table[i].name) > 0) {
-                AP_BoardConfig::sensor_config_error(buf);
+//                AP_BoardConfig::sensor_config_error(buf);
             }
         }
     }

@@ -3,8 +3,6 @@
 #include <inttypes.h>
 
 #include <AP_Common/AP_Common.h>
-#include <AP_HAL/AP_HAL.h>
-
 #include "vector2.h"
 #include "vector3.h"
 
@@ -72,7 +70,7 @@ bool        location_sanitize(const struct Location &defaultLoc, struct Location
 /*
   print a int32_t lat/long in decimal degrees
  */
-void        print_latlon(AP_HAL::BetterStream *s, int32_t lat_or_lon);
+//void        print_latlon(AP_HAL::BetterStream *s, int32_t lat_or_lon);
 
 // Converts from WGS84 geodetic coordinates (lat, lon, height)
 // into WGS84 Earth Centered, Earth Fixed (ECEF) coordinates

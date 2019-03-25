@@ -9,7 +9,6 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>
-#include <AP_HAL/AP_HAL.h>
 
 class AP_AHRS_NavEKF;
 class AP_Terrain;

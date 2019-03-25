@@ -1,14 +1,9 @@
-#include <AP_HAL/AP_HAL.h>
 
 #include "AP_NavEKF2.h"
 #include "AP_NavEKF2_core.h"
-#include <AP_AHRS/AP_AHRS.h>
-#include <AP_Vehicle/AP_Vehicle.h>
-#include <AP_RangeFinder/RangeFinder_Backend.h>
 
 #include <stdio.h>
 
-extern const AP_HAL::HAL& hal;
 
 /********************************************************
 *                   RESET FUNCTIONS                     *
@@ -208,7 +203,7 @@ bool NavEKF2_core::resetHeightDatum(void)
     // record the old height estimate
     float oldHgt = -stateStruct.position.z;
     // reset the barometer so that it reads zero at the current height
-    AP::baro().update_calibration();
+//    AP::baro().update_calibration();
     // reset the height state
     stateStruct.position.z = 0.0f;
     // adjust the height of the EKF origin so that the origin plus baro height before and after the reset is the same
@@ -254,7 +249,9 @@ void NavEKF2_core::SelectVelPosFusion()
         extNavUsedForPos = false;
 
         // correct GPS data for position offset of antenna phase centre relative to the IMU
-        Vector3f posOffsetBody = AP::gps().get_antenna_offset(gpsDataDelayed.sensor_idx) - accelPosOffset;
+        //TODO: read gps data AP::gps().get_antenna_offset(gpsDataDelayed.sensor_idx)
+        Vector3f zero(0.0f,0.0f,0.0f);
+        Vector3f posOffsetBody = /*AP::gps().get_antenna_offset(gpsDataDelayed.sensor_idx)*/zero - accelPosOffset;
         if (!posOffsetBody.is_zero()) {
             // Don't fuse velocity data if GPS doesn't support it
             if (fuseVelData) {
@@ -399,8 +396,6 @@ void NavEKF2_core::SelectVelPosFusion()
 // fuse selected position, velocity and height measurements
 void NavEKF2_core::FuseVelPosNED()
 {
-    // start performance timer
-    hal.util->perf_begin(_perf_FuseVelPosNED);
 
     // health is set bad until test passed
     velHealth = false;
@@ -765,8 +760,6 @@ void NavEKF2_core::FuseVelPosNED()
         }
     }
 
-    // stop performance timer
-    hal.util->perf_end(_perf_FuseVelPosNED);
 }
 
 /********************************************************
@@ -785,14 +778,15 @@ void NavEKF2_core::selectHeightForFusion()
     // the corrected reading is the reading that would have been taken if the sensor was
     // co-located with the IMU
     if (rangeDataToFuse) {
-        AP_RangeFinder_Backend *sensor = frontend->_rng.get_backend(rangeDataDelayed.sensor_idx);
-        if (sensor != nullptr) {
-            Vector3f posOffsetBody = sensor->get_pos_offset() - accelPosOffset;
-            if (!posOffsetBody.is_zero()) {
-                Vector3f posOffsetEarth = prevTnb.mul_transpose(posOffsetBody);
-                rangeDataDelayed.rng += posOffsetEarth.z / prevTnb.c.z;
-            }
-        }
+        //TODO: need to read range finder data
+//        AP_RangeFinder_Backend *sensor = frontend->_rng.get_backend(rangeDataDelayed.sensor_idx);
+//        if (sensor != nullptr) {
+//            Vector3f posOffsetBody = sensor->get_pos_offset() - accelPosOffset;
+//            if (!posOffsetBody.is_zero()) {
+//                Vector3f posOffsetEarth = prevTnb.mul_transpose(posOffsetBody);
+//                rangeDataDelayed.rng += posOffsetEarth.z / prevTnb.c.z;
+//            }
+//        }
     }
 
     // read baro height data from the sensor and check for new data in the buffer
@@ -809,7 +803,8 @@ void NavEKF2_core::selectHeightForFusion()
             activeHgtSource = HGT_SOURCE_RNG;
         } else {
             // determine if we are above or below the height switch region
-            float rangeMaxUse = 1e-4f * (float)frontend->_rng.max_distance_cm_orient(ROTATION_PITCH_270) * (float)frontend->_useRngSwHgt;
+            //TODO: need alternative of frontend->_rng.max_distance_cm_orient(ROTATION_PITCH_270)
+            float rangeMaxUse = 1e-4f * (float)0/*frontend->_rng.max_distance_cm_orient(ROTATION_PITCH_270)*/ * (float)frontend->_useRngSwHgt;
             bool aboveUpperSwHgt = (terrainState - stateStruct.position.z) > rangeMaxUse;
             bool belowLowerSwHgt = (terrainState - stateStruct.position.z) < 0.7f * rangeMaxUse;
 
