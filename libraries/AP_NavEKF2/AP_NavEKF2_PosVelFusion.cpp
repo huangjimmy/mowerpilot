@@ -219,7 +219,7 @@ bool NavEKF2_core::resetHeightDatum(void)
 *                   FUSE MEASURED_DATA                  *
 ********************************************************/
 // select fusion of velocity, position and height measurements
-void NavEKF2_core::SelectVelPosFusion()
+void NavEKF2_core::SelectVelPosFusion(GpsData gpsData, MagnetoData magnetoData, BaroData baroData, RngBcnData rngBcnData)
 {
     // Check if the magnetometer has been fused on that time step and the filter is running at faster than 200 Hz
     // If so, don't fuse measurements on this time step to reduce frame over-runs
@@ -235,7 +235,7 @@ void NavEKF2_core::SelectVelPosFusion()
     extNavDataToFuse = storedExtNav.recall(extNavDataDelayed, imuDataDelayed.time_ms);
 
     // read GPS data from the sensor and check for new data in the buffer
-    readGpsData();
+    readGpsData(gpsData);
     gpsDataToFuse = storedGPS.recall(gpsDataDelayed,imuDataDelayed.time_ms);
     // Determine if we need to fuse position and velocity data on this time step
     if (gpsDataToFuse && PV_AidingMode == AID_ABSOLUTE) {
@@ -297,7 +297,7 @@ void NavEKF2_core::SelectVelPosFusion()
                 extNavYawResetRequest = true;
                 magYawResetRequest = false;
                 gpsYawResetRequest = false;
-                controlMagYawReset();
+                controlMagYawReset(magnetoData);
                 finalInflightYawInit = true;
             } else {
                 fuseEulerYaw();
@@ -318,7 +318,7 @@ void NavEKF2_core::SelectVelPosFusion()
 
     // Select height data to be fused from the available baro, range finder and GPS sources
 
-    selectHeightForFusion();
+    selectHeightForFusion(baroData, rngBcnData);
 
     // if we are using GPS, check for a change in receiver and reset position and height
     if (gpsDataToFuse && PV_AidingMode == AID_ABSOLUTE && gpsDataDelayed.sensor_idx != last_gps_idx) {
@@ -767,7 +767,7 @@ void NavEKF2_core::FuseVelPosNED()
 ********************************************************/
 
 // select the height measurement to be fused from the available baro, range finder and GPS sources
-void NavEKF2_core::selectHeightForFusion()
+void NavEKF2_core::selectHeightForFusion(BaroData baroData, RngBcnData rngBcnData)
 {
     // Read range finder data and check for new data in the buffer
     // This data is used by both height and optical flow fusion processing
@@ -778,19 +778,17 @@ void NavEKF2_core::selectHeightForFusion()
     // the corrected reading is the reading that would have been taken if the sensor was
     // co-located with the IMU
     if (rangeDataToFuse) {
-        //TODO: need to read range finder data
-//        AP_RangeFinder_Backend *sensor = frontend->_rng.get_backend(rangeDataDelayed.sensor_idx);
-//        if (sensor != nullptr) {
-//            Vector3f posOffsetBody = sensor->get_pos_offset() - accelPosOffset;
-//            if (!posOffsetBody.is_zero()) {
-//                Vector3f posOffsetEarth = prevTnb.mul_transpose(posOffsetBody);
-//                rangeDataDelayed.rng += posOffsetEarth.z / prevTnb.c.z;
-//            }
-//        }
+        if (rngBcnData.has_rngBcn && rangeDataDelayed.sensor_idx < rngBcnData.beacon_count) {
+            Vector3f posOffsetBody = rngBcnData.beaconData[rangeDataDelayed.sensor_idx].pos_offset - accelPosOffset;
+            if (!posOffsetBody.is_zero()) {
+                Vector3f posOffsetEarth = prevTnb.mul_transpose(posOffsetBody);
+                rangeDataDelayed.rng += posOffsetEarth.z / prevTnb.c.z;
+            }
+        }
     }
 
     // read baro height data from the sensor and check for new data in the buffer
-    readBaroData();
+    readBaroData(baroData);
     baroDataToFuse = storedBaro.recall(baroDataDelayed, imuDataDelayed.time_ms);
 
     // select height source

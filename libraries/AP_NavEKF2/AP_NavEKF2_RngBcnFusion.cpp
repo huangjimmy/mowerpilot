@@ -10,10 +10,10 @@
 ********************************************************/
 
 // select fusion of range beacon measurements
-void NavEKF2_core::SelectRngBcnFusion()
+void NavEKF2_core::SelectRngBcnFusion(RngBcnData rngBcnData)
 {
     // read range data from the sensor and check for new data in the buffer
-    readRngBcnData();
+    readRngBcnData(rngBcnData);
 
     // Determine if we need to fuse range beacon data on this time step
     if (rngBcnDataToFuse) {

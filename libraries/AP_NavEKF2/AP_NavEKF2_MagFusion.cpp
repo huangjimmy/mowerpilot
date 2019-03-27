@@ -10,7 +10,7 @@
 ********************************************************/
 
 // Control reset of yaw and magnetic field states
-void NavEKF2_core::controlMagYawReset()
+void NavEKF2_core::controlMagYawReset(MagnetoData magnetoData)
 {
 
     // Vehicles that can use a zero sideslip assumption (Planes) are a special case
@@ -123,7 +123,7 @@ void NavEKF2_core::controlMagYawReset()
 
             // Use the Euler angles and magnetometer measurement to update the magnetic field states
             // and get an updated quaternion
-            Quaternion newQuat = calcQuatAndFieldStates(eulerAngles.x, eulerAngles.y);
+            Quaternion newQuat = calcQuatAndFieldStates(eulerAngles.x, eulerAngles.y, magnetoData);
 
             if (magYawResetRequest) {
                 // previous value used to calculate a reset delta
@@ -227,7 +227,7 @@ void NavEKF2_core::realignYawGPS()
 ********************************************************/
 
 // select fusion of magnetometer data
-void NavEKF2_core::SelectMagFusion()
+void NavEKF2_core::SelectMagFusion(MagnetoData magnetoData)
 {
 
     // clear the flag that lets other processes know that the expensive magnetometer fusion operation has been performed on that time step
@@ -235,7 +235,7 @@ void NavEKF2_core::SelectMagFusion()
     magFusePerformed = false;
 
     // check for and read new magnetometer measurements
-    readMagData();
+    readMagData(magnetoData);
 
     // If we are using the compass and the magnetometer has been unhealthy for too long we declare a timeout
     if (magHealth) {
@@ -250,7 +250,7 @@ void NavEKF2_core::SelectMagFusion()
 
     // Control reset of yaw and magnetic field states if we are using compass data
     if (magDataToFuse && use_compass()) {
-        controlMagYawReset();
+        controlMagYawReset(magnetoData);
     }
 
     // determine if conditions are right to start a new fusion cycle

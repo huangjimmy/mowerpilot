@@ -98,7 +98,7 @@ bool NavEKF2_core::setup_core(NavEKF2 *_frontend, uint8_t _imu_index, uint8_t _c
 ********************************************************/
 
 // Use a function call rather than a constructor to initialise variables because it enables the filter to be re-started in flight if necessary.
-void NavEKF2_core::InitialiseVariables()
+void NavEKF2_core::InitialiseVariables(MagnetoData magnetoData)
 {
     // calculate the nominal filter update rate
 //    const AP_InertialSensor &ins = AP::ins();
@@ -313,14 +313,14 @@ void NavEKF2_core::InitialiseVariables()
     // now init mag variables
     yawAlignComplete = false;
 
-    InitialiseVariablesMag();
+    InitialiseVariablesMag(magnetoData);
 }
 
 
 /*
   separate out the mag reset so it can be used when compass learning completes
  */
-void NavEKF2_core::InitialiseVariablesMag()
+void NavEKF2_core::InitialiseVariablesMag(MagnetoData magnetoData)
 {
     lastHealthyMagTime_ms = imuSampleTime_ms;
     lastMagUpdate_us = 0;
@@ -333,9 +333,9 @@ void NavEKF2_core::InitialiseVariablesMag()
 
     inhibitMagStates = true;
 
-//    if (_ahrs->get_compass()) {
-//        magSelectIndex = _ahrs->get_compass()->get_primary();
-//    }
+    if (magnetoData.magneto_use) {
+        magSelectIndex = magnetoData.compass_primary_index;
+    }
     lastMagOffsetsValid = false;
     magStateResetRequest = false;
     magStateInitComplete = false;
@@ -350,7 +350,7 @@ void NavEKF2_core::InitialiseVariablesMag()
 
 // Initialise the states from accelerometer and magnetometer data (if present)
 // This method can only be used when the vehicle is static
-bool NavEKF2_core::InitialiseFilterBootstrap(void)
+bool NavEKF2_core::InitialiseFilterBootstrap(ftype ins_loop_delta_t, uint32_t hal_millis, Vector3f ins_accelPosOffset, Vector3f imuDataNew_delAng, float imuDataNew_delAngDT, GpsData gpsData, MagnetoData magnetoData, BaroData baroData)
 {
     // If we are a plane and don't have GPS lock then don't initialise
 //    if (assume_zero_sideslip() && AP::gps().status() < AP_GPS::GPS_OK_FIX_3D) {
@@ -365,23 +365,23 @@ bool NavEKF2_core::InitialiseFilterBootstrap(void)
         // we are initialised, but we don't return true until the IMU
         // buffer has been filled. This prevents a timing
         // vulnerability with a pause in IMU data during filter startup
-        readIMUData();
-        readMagData();
-        readGpsData();
-        readBaroData();
+        readIMUData(ins_loop_delta_t, hal_millis, ins_accelPosOffset, imuDataNew_delAng, imuDataNew_delAngDT);
+        readMagData(magnetoData);
+        readGpsData(gpsData);
+        readBaroData(baroData);
         return storedIMU.is_filled();
     }
 
     // set re-used variables to zero
-    InitialiseVariables();
+    InitialiseVariables(magnetoData);
 
 //    const AP_InertialSensor &ins = AP::ins();
 
     // Initialise IMU data
     //TODO: need to init dtIMUavg
-    dtIMUavg = 0;
+    dtIMUavg = ins_loop_delta_t;
 //    dtIMUavg = ins.get_loop_delta_t();
-    readIMUData();
+    readIMUData(ins_loop_delta_t, hal_millis, ins_accelPosOffset, imuDataNew_delAng, imuDataNew_delAngDT);
     storedIMU.reset_history(imuDataNew);
     imuDataDelayed = imuDataNew;
 
@@ -392,7 +392,7 @@ bool NavEKF2_core::InitialiseFilterBootstrap(void)
     //initAccVec = ins.get_accel(imu_index);
 
     // read the magnetometer data
-    readMagData();
+    readMagData(magnetoData);
 
     // normalise the acceleration vector
     float pitch=0, roll=0;
@@ -425,12 +425,12 @@ bool NavEKF2_core::InitialiseFilterBootstrap(void)
     stateStruct.body_magfield.zero();
 
     // read the GPS and set the position and velocity states
-    readGpsData();
+    readGpsData(gpsData);
     ResetVelocity();
     ResetPosition();
 
     // read the barometer and set the height state
-    readBaroData();
+    readBaroData(baroData);
     ResetHeight();
 
     // define Earth rotation vector in the NED navigation frame
@@ -497,7 +497,7 @@ void NavEKF2_core::CovarianceInit()
 *                 UPDATE FUNCTIONS                      *
 ********************************************************/
 // Update Filter States - this should be called whenever new IMU data is available
-void NavEKF2_core::UpdateFilter(bool predict)
+void NavEKF2_core::UpdateFilter(bool predict, IMUData imuData, GpsData gpsData, MagnetoData magnetoData, AirSpdData airSpdData, RngBcnData rngBcnData, BaroData baroData)
 {
     // Set the flag to indicate to the filter that the front-end has given permission for a new state prediction cycle to be started
     startPredictEnabled = predict;
@@ -518,10 +518,10 @@ void NavEKF2_core::UpdateFilter(bool predict)
     imuSampleTime_ms = frontend->imuSampleTime_us / 1000;
 
     // Check arm status and perform required checks and mode changes
-    controlFilterModes();
+    controlFilterModes(magnetoData);
 
     // read IMU data as delta angles and velocities
-    readIMUData();
+    readIMUData(imuData.ins_loop_delta_t, imuData.hal_millis, imuData.ins_accelPosOffset, imuData.imuDataNew_delAng, imuData.imuDataNew_delAngDT);
 
     // Run the EKF equations to estimate at the fusion time horizon if new IMU data is available in the buffer
     if (runUpdates) {
@@ -532,19 +532,19 @@ void NavEKF2_core::UpdateFilter(bool predict)
         CovariancePrediction();
 
         // Update states using  magnetometer data
-        SelectMagFusion();
+        SelectMagFusion(magnetoData);
 
         // Update states using GPS and altimeter data
-        SelectVelPosFusion();
+        SelectVelPosFusion(gpsData, magnetoData, baroData, rngBcnData);
 
         // Update states using range beacon data
-        SelectRngBcnFusion();
+        SelectRngBcnFusion(rngBcnData);
 
         // Update states using optical flow data
         SelectFlowFusion();
 
         // Update states using airspeed data
-        SelectTasFusion();
+        SelectTasFusion(airSpdData); // TAS stands for true air speed
 
         // Update states using sideslip constraint assumption for fly-forward vehicles
         SelectBetaFusion();
@@ -567,12 +567,12 @@ void NavEKF2_core::UpdateFilter(bool predict)
       that state the EKF can't recover, so we do a hard reset and let
       it try again.
      */
-//    if (filterStatus.value != 0) {
-//        last_filter_ok_ms = AP_HAL::millis();
-//    }
+    if (filterStatus.value != 0) {
+        last_filter_ok_ms = imuData.hal_millis;
+    }
 //    if (filterStatus.value == 0 &&
 //        last_filter_ok_ms != 0 &&
-//        AP_HAL::millis() - last_filter_ok_ms > 5000 &&
+//            imuData.hal_millis - last_filter_ok_ms > 5000 &&
 //        !hal.util->get_soft_armed()) {
 //        // we've been unhealthy for 5 seconds after being healthy, reset the filter
 //        gcs().send_text(MAV_SEVERITY_WARNING, "EKF2 IMU%u forced reset",(unsigned)imu_index);
@@ -1474,7 +1474,7 @@ void NavEKF2_core::calcEarthRateNED(Vector3f &omega, int32_t latitude) const
 
 // initialise the earth magnetic field states using declination, suppled roll/pitch
 // and magnetometer measurements and return initial attitude quaternion
-Quaternion NavEKF2_core::calcQuatAndFieldStates(float roll, float pitch)
+Quaternion NavEKF2_core::calcQuatAndFieldStates(float roll, float pitch, MagnetoData magnetoData)
 {
     // declare local variables required to calculate initial orientation and magnetic field
     float yaw;
@@ -1487,7 +1487,7 @@ Quaternion NavEKF2_core::calcQuatAndFieldStates(float roll, float pitch)
         Tbn.from_euler(roll, pitch, 0.0f);
 
         // read the magnetometer data
-        readMagData();
+        readMagData(magnetoData);
 
         // rotate the magnetic field into NED axes
         initMagNED = Tbn * magDataDelayed.mag;
