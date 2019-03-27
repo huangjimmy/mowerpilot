@@ -25,9 +25,95 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_NavEKF/AP_Nav_Common.h>
+#include <AP_Common/Location.h>
+
+struct IMUData {
+    float ins_loop_delta_t;
+    uint32_t hal_millis;
+    Vector3<float> ins_accelPosOffset;
+    Vector3<float> imuDataNew_delAng;
+    float imuDataNew_delAngDT;
+};
+
+/// GPS status codes
+enum GPS_Status {
+    NO_GPS = 0,                     ///< No GPS connected/detected
+    NO_FIX = 1,                     ///< Receiving valid GPS messages but no lock
+    GPS_OK_FIX_2D = 2,              ///< Receiving valid messages and 2D lock
+    GPS_OK_FIX_3D = 3,              ///< Receiving valid messages and 3D lock
+    GPS_OK_FIX_3D_DGPS = 4,           ///< Receiving valid messages and 3D lock with differential improvements
+    GPS_OK_FIX_3D_RTK_FLOAT = 5, ///< Receiving valid messages and 3D RTK Float
+    GPS_OK_FIX_3D_RTK_FIXED = 6, ///< Receiving valid messages and 3D RTK Fixed
+};
+
+struct GpsData {
+    uint32_t  gps_last_message_time_ms;
+    GPS_Status gps_status;
+    float gps_delay;
+    Vector3f gps_velocity;
+    uint8_t gps_primary_sensor;
+    float gps_speed_accuracy;
+    float gps_horizontal_accuracy;
+    bool gps_horizontal_accuracy_ok;
+    float gps_vertical_accuracy;
+    bool gps_vertical_accuracy_ok;
+    uint32_t gps_num_sats;
+    bool gps_have_vertical_velocity;
+    Location gps_location;
+};
+
+struct BaroData {
+    uint32_t baro_last_update;
+    float baro_altitude;
+};
+
+struct AirSpdData {
+    bool airSpd_use;
+    uint32_t airSpd_last_update_ms;
+    float airSpd_airspeed;
+    float airSpd_EAS2TAS;
+};
+
+struct BeaconData {
+    bool beacon_healthy;
+    uint32_t beacon_last_update_ms;
+    float beacon_distance;
+    Vector3f beacon_position;
+    Vector3f pos_offset;
+};
+struct RngBcnData {
+    bool has_rngBcn;
+    uint8_t beacon_count;
+    BeaconData *beaconData;
+
+    bool get_vehicle_position_ned;//if false, beaconVehiclePosNED and beaconVehiclePosErr will not not used
+    Vector3f beaconVehiclePosNED;
+    float beaconVehiclePosErr;
+
+    bool beacon_get_origin;//if false, beacon_get_origin will not be used
+    Location beacon_origin;
+
+};
+
+struct MagnetoCompassData {
+    bool use_for_yaw;
+    Vector3f compass_offset;
+    uint32_t last_update_usec;
+    Vector3f compass_field;
+    bool compass_consistent;
+
+};
+struct MagnetoData {
+    bool magneto_use;
+    uint8_t compass_count;
+    bool learn_offsets_enabled;
+    uint8_t compass_primary_index;
+    uint32_t compass_last_update_usec;
+
+    MagnetoCompassData * compassData;//should be an array with compass_count ${MagnetoCompassData} objects
+};
 
 class NavEKF2_core;
-class AP_AHRS;
 
 class NavEKF2 {
     friend class NavEKF2_core;
@@ -47,10 +133,10 @@ public:
     }
 
     // Initialise the filter
-    bool InitialiseFilter(void);
+    bool InitialiseFilter(uint64_t hal_micros64, uint32_t ins_sample_rate, uint32_t ins_accel_count, IMUData imuData[], GpsData gpsData, MagnetoData magnetoData, BaroData baroData);
 
     // Update Filter States - this should be called whenever new IMU data is available
-    void UpdateFilter(void);
+    void UpdateFilter(uint64_t hal_micros64, uint64_t ins_last_update_usec, IMUData imuData[], GpsData gpsData, MagnetoData magnetoData, AirSpdData airSpdData, RngBcnData rngBcnData, BaroData baroData);
 
     // check if we should write log messages
     void check_log_write(void);

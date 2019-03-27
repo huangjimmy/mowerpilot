@@ -590,7 +590,7 @@ void NavEKF2::check_log_write(void)
 
 
 // Initialise the filter
-bool NavEKF2::InitialiseFilter(void)
+bool NavEKF2::InitialiseFilter(uint64_t hal_micros64, uint32_t ins_sample_rate, uint32_t ins_accel_count, IMUData imuData[], GpsData gpsData, MagnetoData magnetoData, BaroData baroData)
 {
     if (_enable == 0) {
         return false;
@@ -598,10 +598,10 @@ bool NavEKF2::InitialiseFilter(void)
 
 
     //TODO: need alternative of micros64
-    imuSampleTime_us = 0;//AP_HAL::micros64();
+    imuSampleTime_us = hal_micros64;//AP_HAL::micros64();
 
-    // remember expected frame time
-    _frameTimeUsec = 1e6 / 260;//ins.get_sample_rate();
+    // remember expected frame time //TODO: need to get ins.get_sample_rate()
+    _frameTimeUsec = 1e6 / ins_sample_rate;//ins.get_sample_rate();
 
     // expected number of IMU frames per prediction
     _framesPerPrediction = uint8_t((EKF_TARGET_DT / (_frameTimeUsec * 1.0e-6) + 0.5));
@@ -616,7 +616,7 @@ bool NavEKF2::InitialiseFilter(void)
 
         // don't run multiple filters for 1 IMU
         //TODO: need alternative of ins.get_accel_count()
-        uint8_t mask = (1U<</*ins.get_accel_count()*/8)-1;
+        uint8_t mask = (1U<</*ins.get_accel_count()*/ins_accel_count)-1;
         _imuMask.set(_imuMask.get() & mask);
         
         // count IMUs from mask
@@ -665,7 +665,11 @@ bool NavEKF2::InitialiseFilter(void)
     // initialise successfully
     bool ret = true;
     for (uint8_t i=0; i<num_cores; i++) {
-        ret &= core[i].InitialiseFilterBootstrap();
+        Vector3<float> ins_accelPosOffset{imuData[i].ins_accelPosOffset.x, imuData[i].ins_accelPosOffset.y, imuData[i].ins_accelPosOffset.z};
+        Vector3<float> imuDataNew_delAng{imuData[i].imuDataNew_delAng.x, imuData[i].imuDataNew_delAng.y, imuData[i].imuDataNew_delAng.z};
+
+        ret &= core[i].InitialiseFilterBootstrap(imuData[i].ins_loop_delta_t, imuData[i].hal_millis,
+                                                 ins_accelPosOffset, imuDataNew_delAng, imuData[i].imuDataNew_delAngDT, gpsData, magnetoData, baroData);
     }
 
     // zero the structs used capture reset events
@@ -678,7 +682,7 @@ bool NavEKF2::InitialiseFilter(void)
 }
 
 // Update Filter States - this should be called whenever new IMU data is available
-void NavEKF2::UpdateFilter(void)
+void NavEKF2::UpdateFilter(uint64_t hal_micros64, uint64_t ins_last_update_usec, IMUData imuData[], GpsData gpsData, MagnetoData magnetoData, AirSpdData airSpdData, RngBcnData rngBcnData, BaroData baroData)
 {
     if (!core) {
         return;
@@ -694,14 +698,14 @@ void NavEKF2::UpdateFilter(void)
         // have already used more than 1/3 of the CPU budget for this
         // loop then suppress the prediction step. This allows
         // multiple EKF instances to cooperate on scheduling
-//        if (core[i].getFramesSincePredict() < (_framesPerPrediction+3) &&
-//            (AP_HAL::micros() - ins.get_last_update_usec()) > _frameTimeUsec/3) {
-//            statePredictEnabled[i] = false;
-//        } else {
-//            statePredictEnabled[i] = true;
-//        }
+        if (core[i].getFramesSincePredict() < (_framesPerPrediction+3) &&
+            (hal_micros64 - ins_last_update_usec) > _frameTimeUsec/3) {
+            statePredictEnabled[i] = false;
+        } else {
+            statePredictEnabled[i] = true;
+        }
         statePredictEnabled[i] = true;
-        core[i].UpdateFilter(statePredictEnabled[i]);
+        core[i].UpdateFilter(statePredictEnabled[i], imuData[i], gpsData,magnetoData, airSpdData, rngBcnData, baroData);
     }
 
     // If the current core selected has a bad error score or is unhealthy, switch to a healthy core with the lowest fault score

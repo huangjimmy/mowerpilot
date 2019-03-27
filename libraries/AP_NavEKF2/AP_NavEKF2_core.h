@@ -68,11 +68,11 @@ public:
     
     // Initialise the states from accelerometer and magnetometer data (if present)
     // This method can only be used when the vehicle is static
-    bool InitialiseFilterBootstrap(void);
+    bool InitialiseFilterBootstrap(float ins_loop_delta_t, uint32_t hal_millis, Vector3f ins_accelPosOffset, Vector3f imuDataNew_delAng, float imuDataNew_delAngDT, GpsData gpsData, MagnetoData magnetoData, BaroData baroData);
 
     // Update Filter States - this should be called whenever new IMU data is available
     // The predict flag is set true when a new prediction cycle can be started
-    void UpdateFilter(bool predict);
+    void UpdateFilter(bool predict, IMUData imuData, GpsData gpsData, MagnetoData magnetoData, AirSpdData airSpdData, RngBcnData rngBcnData, BaroData baroData);
 
     // Check basic filter health metrics and return a consolidated health status
     bool healthy(void) const;
@@ -582,34 +582,34 @@ private:
     void correctDeltaVelocity(Vector3f &delVel, float delVelDT);
 
     // update IMU delta angle and delta velocity measurements
-    void readIMUData();
+    void readIMUData(ftype ins_loop_delta_t, uint32_t hal_millis, Vector3f ins_accelPosOffset, Vector3f imuDataNew_delAng, float imuDataNew_delAngDT);
 
     // check for new valid GPS data and update stored measurement if available
-    void readGpsData();
+    void readGpsData(GpsData gpsData);
 
     // check for new altitude measurement data and update stored measurement if available
-    void readBaroData();
+    void readBaroData(BaroData baroData);
 
     // check for new magnetometer data and update store measurements if available
-    void readMagData();
+    void readMagData(MagnetoData magnetoData);
 
     // check for new airspeed data and update stored measurements if available
-    void readAirSpdData();
+    void readAirSpdData(AirSpdData airSpdData);
 
     // check for new range beacon data and update stored measurements if available
-    void readRngBcnData();
+    void readRngBcnData(RngBcnData rngBcnData);
 
     // determine when to perform fusion of GPS position and  velocity measurements
-    void SelectVelPosFusion();
+    void SelectVelPosFusion(GpsData gpsData, MagnetoData magnetoData, BaroData baroData, RngBcnData rngBcnData);
 
     // determine when to perform fusion of range measurements take relative to a beacon at a known NED position
-    void SelectRngBcnFusion();
+    void SelectRngBcnFusion(RngBcnData rngBcnData);
 
     // determine when to perform fusion of magnetometer measurements
-    void SelectMagFusion();
+    void SelectMagFusion(MagnetoData magnetoData);
 
     // determine when to perform fusion of true airspeed measurements
-    void SelectTasFusion();
+    void SelectTasFusion(AirSpdData airSpdData);
 
     // determine when to perform fusion of synthetic sideslp measurements
     void SelectBetaFusion();
@@ -619,12 +619,12 @@ private:
 
     // initialise the earth magnetic field states using declination and current attitude and magnetometer measurements
     // and return attitude quaternion
-    Quaternion calcQuatAndFieldStates(float roll, float pitch);
+    Quaternion calcQuatAndFieldStates(float roll, float pitch, MagnetoData magnetoData);
 
     // zero stored variables
-    void InitialiseVariables();
+    void InitialiseVariables(MagnetoData magnetoData);
 
-    void InitialiseVariablesMag();
+    void InitialiseVariablesMag(MagnetoData magnetoData);
 
     // reset the horizontal position states uing the last GPS measurement
     void ResetPosition(void);
@@ -669,13 +669,13 @@ private:
     void FuseOptFlow();
 
     // Control filter mode changes
-    void controlFilterModes();
+    void controlFilterModes(MagnetoData magnetoData);
 
     // Determine if we are flying or on the ground
     void detectFlight();
 
     // Set inertial navigaton aiding mode
-    void setAidingMode();
+    void setAidingMode(MagnetoData magnetoData);
 
     // Determine if learning of wind and magnetic field will be enabled and set corresponding indexing limits to
     // avoid unnecessary operations
@@ -686,7 +686,7 @@ private:
     void checkAttitudeAlignmentStatus();
 
     // Control reset of yaw and magnetic field states
-    void controlMagYawReset();
+    void controlMagYawReset(MagnetoData magnetoData);
 
     // Set the NED origin to be used until the next filter reset
     void setOrigin();
@@ -734,7 +734,7 @@ private:
     void correctEkfOriginHeight();
 
     // Select height data to be fused from the available baro, range finder and GPS sources
-    void selectHeightForFusion();
+    void selectHeightForFusion(BaroData baroData, RngBcnData rngBcnData);
 
     // zero attitude state covariances, but preserve variances
     void zeroAttCovOnly();

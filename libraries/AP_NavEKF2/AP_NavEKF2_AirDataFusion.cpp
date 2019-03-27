@@ -179,7 +179,7 @@ void NavEKF2_core::FuseAirspeed()
 }
 
 // select fusion of true airspeed measurements
-void NavEKF2_core::SelectTasFusion()
+void NavEKF2_core::SelectTasFusion(AirSpdData airSpdData)
 {
     // Check if the magnetometer has been fused on that time step and the filter is running at faster than 200 Hz
     // If so, don't fuse measurements on this time step to reduce frame over-runs
@@ -192,7 +192,7 @@ void NavEKF2_core::SelectTasFusion()
     }
 
     // get true airspeed measurement
-    readAirSpdData();
+    readAirSpdData(airSpdData);
 
     // If we haven't received airspeed data for a while, then declare the airspeed data as being timed out
     if (imuSampleTime_ms - tasDataNew.time_ms > frontend->tasRetryTime_ms) {

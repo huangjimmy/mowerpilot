@@ -6,7 +6,7 @@
 
 
 // Control filter mode transitions
-void NavEKF2_core::controlFilterModes()
+void NavEKF2_core::controlFilterModes(MagnetoData magnetoData)
 {
     // Determine motor arm status
     prevMotorsArmed = motorsArmed;
@@ -28,7 +28,7 @@ void NavEKF2_core::controlFilterModes()
     checkAttitudeAlignmentStatus();
 
     // Set the type of inertial navigation aiding used
-    setAidingMode();
+    setAidingMode(magnetoData);
 
 }
 
@@ -147,7 +147,7 @@ void NavEKF2_core::setWindMagStateLearningMode()
 }
 
 // Set inertial navigation aiding mode
-void NavEKF2_core::setAidingMode()
+void NavEKF2_core::setAidingMode(MagnetoData magnetoData)
 {
     // Save the previous status so we can detect when it has changed
     PV_AidingModePrev = PV_AidingMode;
@@ -310,7 +310,7 @@ void NavEKF2_core::setAidingMode()
 //                gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u initial pos NED = %3.1f,%3.1f,%3.1f (m)",(unsigned)imu_index,(double)extNavDataDelayed.pos.x,(double)extNavDataDelayed.pos.y,(double)extNavDataDelayed.pos.z);
                 // handle yaw reset as special case
                 extNavYawResetRequest = true;
-                controlMagYawReset();
+                controlMagYawReset(magnetoData);
                 // handle height reset as special case
                 hgtMea = -extNavDataDelayed.pos.z;
                 posDownObsNoise = sq(constrain_float(extNavDataDelayed.posErr, 0.1f, 10.0f));
