@@ -689,7 +689,7 @@ private:
     void controlMagYawReset(MagnetoData magnetoData);
 
     // Set the NED origin to be used until the next filter reset
-    void setOrigin();
+    void setOrigin(const Location & gpsLocation);
 
     // determine if a takeoff is expected so that we can compensate for expected barometer errors due to ground effect
     bool getTakeoffExpected();
@@ -698,7 +698,7 @@ private:
     bool getTouchdownExpected();
 
     // Assess GPS data quality and return true if good enough to align the EKF
-    bool calcGpsGoodToAlign(void);
+    bool calcGpsGoodToAlign(Location gpsLocation);
 
     // return true and set the class variable true if the delta angle bias has been learned
     bool checkGyroCalStatus(void);

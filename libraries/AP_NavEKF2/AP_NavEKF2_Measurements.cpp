@@ -532,7 +532,7 @@ void NavEKF2_core::readGpsData(GpsData gpsData)
             // Monitor quality of the GPS velocity data before and after alignment using separate checks
             if (PV_AidingMode != AID_ABSOLUTE) {
                 // Pre-alignment checks
-                gpsGoodToAlign = calcGpsGoodToAlign();
+                gpsGoodToAlign = calcGpsGoodToAlign(gpsData.gps_location);
             } else {
                 gpsGoodToAlign = false;
             }
@@ -545,7 +545,7 @@ void NavEKF2_core::readGpsData(GpsData gpsData)
 
             // Set the EKF origin and magnetic field declination if not previously set  and GPS checks have passed
             if (gpsGoodToAlign && !validOrigin) {
-                setOrigin();
+                setOrigin(gpsData.gps_location);
 
                 // set the NE earth magnetic field states using the published declination
                 // and set the corresponding variances and covariances

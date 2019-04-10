@@ -395,7 +395,7 @@ bool NavEKF2_core::readyToUseExtNav(void) const
 // return true if we should use the compass
 bool NavEKF2_core::use_compass(void) const
 {
-    return false;//_ahrs->get_compass() && _ahrs->get_compass()->use_for_yaw(magSelectIndex) && !allMagSensorsFailed;
+    return true;//_ahrs->get_compass() && _ahrs->get_compass()->use_for_yaw(magSelectIndex) && !allMagSensorsFailed;
 }
 
 /*
@@ -425,11 +425,11 @@ bool NavEKF2_core::setOriginLLH(const Location &loc)
 }
 
 // Set the NED origin to be used until the next filter reset
-void NavEKF2_core::setOrigin()
+void NavEKF2_core::setOrigin(const Location & gpsLocation)
 {
     // assume origin at current GPS location (no averaging)
     //TODO: need gps location
-    EKF_origin = Location();//AP::gps().location();
+    EKF_origin = gpsLocation;//AP::gps().location();
     // if flying, correct for height change from takeoff so that the origin is at field elevation
     if (inFlight) {
         EKF_origin.alt += (int32_t)(100.0f * stateStruct.position.z);

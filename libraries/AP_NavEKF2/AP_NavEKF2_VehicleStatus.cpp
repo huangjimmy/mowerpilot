@@ -12,7 +12,7 @@
    We also record the failure reason so that prearm_failure_reason()
    can give a good report to the user on why arming is failing
 */
-bool NavEKF2_core::calcGpsGoodToAlign(void)
+bool NavEKF2_core::calcGpsGoodToAlign(Location gpsLocation)
 {
     //const AP_GPS &gps = AP::gps();
 
@@ -40,7 +40,7 @@ bool NavEKF2_core::calcGpsGoodToAlign(void)
     // Check for significant change in GPS position if disarmed which indicates bad GPS
     // This check can only be used when the vehicle is stationary
     //TODO: need to get gps location
-    const struct Location &gpsloc = Location();//gps.location(); // Current location
+    const struct Location &gpsloc = gpsLocation;//gps.location(); // Current location
     const float posFiltTimeConst = 10.0f; // time constant used to decay position drift
     // calculate time lapsed since last update and limit to prevent numerical errors
     float deltaTime = constrain_float(float(imuDataDelayed.time_ms - lastPreAlignGpsCheckTime_ms)*0.001f,0.01f,posFiltTimeConst);
@@ -124,7 +124,7 @@ bool NavEKF2_core::calcGpsGoodToAlign(void)
     float hAcc = 0.0f;
     bool hAccFail;
     //TODO: need to determine hAccFail and gpsCheckStatus.bad_hAcc = false;
-    hAccFail = true;
+    hAccFail = false;
     gpsCheckStatus.bad_hAcc = true;
 //    if (gps.horizontal_accuracy(hAcc)) {
 //        hAccFail = (hAcc > 5.0f*checkScaler)  && (frontend->_gpsCheck & MASK_GPS_POS_ERR);
@@ -172,7 +172,7 @@ bool NavEKF2_core::calcGpsGoodToAlign(void)
     }
 
     // fail if satellite geometry is poor
-    bool hdopFail = true;// (gps.get_hdop() > 250)  && (frontend->_gpsCheck & MASK_GPS_HDOP);
+    bool hdopFail = false;// (gps.get_hdop() > 250)  && (frontend->_gpsCheck & MASK_GPS_HDOP);
 
     // Report check result as a text string and bitmask
     //TODO: need to determine hdopFail
@@ -186,7 +186,7 @@ bool NavEKF2_core::calcGpsGoodToAlign(void)
 
     // fail if not enough sats
     //TODO: need to determine numStatsFail
-    bool numSatsFail = true;//(gps.num_sats() < 6) && (frontend->_gpsCheck & MASK_GPS_NSATS);
+    bool numSatsFail = false;//(gps.num_sats() < 6) && (frontend->_gpsCheck & MASK_GPS_NSATS);
 
     // Report check result as a text string and bitmask
     if (numSatsFail) {
@@ -221,7 +221,7 @@ bool NavEKF2_core::calcGpsGoodToAlign(void)
     // assume failed first time through and notify user checks have started
     if (lastGpsVelFail_ms == 0) {
 //        hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "EKF starting GPS checks");
-        lastGpsVelFail_ms = imuSampleTime_ms;
+         lastGpsVelFail_ms = imuSampleTime_ms;
     }
 
     // record time of fail
