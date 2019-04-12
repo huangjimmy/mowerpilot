@@ -63,22 +63,14 @@ log文件的GPS和Gyro等数据为从手机记录的，与示例程序所需的�
 
 ```C++
 #include <AP_NavEKF2/AP_NavEKF2.h>
-```
 
-```C++
 NavEKF2 navEKF2; //声明一个NavEKF2变量
-```
 
-```C++
-//初始化Filter，初始化的时候，需要提供IMU, GPS, Magnetometer数据，Barometer数据可不提供
+//初始化Filter，初始化的时候，需要提供IMU, GPS, Magnetometer数据；而气压数据可不提供
 navEKF2.InitialiseFilter(last_time_usec, 10, 1, imuData, gpsData, magnetoData, baroData);
-```
 
-```C++
-//执行Filter的Update步骤，需要提供IMU, GPS, Magnetometer数据，Air Speed, Range Beacon和Barometer可不提供
+//执行Filter的Update步骤，需要提供IMU, GPS, 磁感数据；而空速、 Range Beacon、和气压可不提供
 navEKF2.UpdateFilter(last_time_usec, 0, imuData, gpsData, magnetoData, airSpdData, rngBcnData, baroData);
-```
 
-```C++
 navEKF2.get* //调用以get开头的方法获取计算后的数据
 ```
