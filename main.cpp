@@ -325,7 +325,7 @@ int main (int argc, char *argv[])
         magnetoData.compass_count = 1;
         magnetoData.magneto_use = false;
         magnetoData.compass_last_update_usec = last_time_usec - hal_ms;
-        magnetoData.learn_offsets_enabled = true;
+        magnetoData.learn_offsets_enabled = false;
         magnetoData.compass_primary_index = 0;
         magnetoData.compassData = new MagnetoCompassData();
 
@@ -342,9 +342,9 @@ int main (int argc, char *argv[])
             gpsData.gps_delay = 0;
             gpsData.gps_horizontal_accuracy = gps.horizontal_accuracy;
             gpsData.gps_last_message_time_ms = last_time_usec/1000 - hal_ms/1000;
-            gpsData.gps_location.lng = gps.longitude*FACTOR;
-            gpsData.gps_location.lat = gps.latitude*FACTOR;
-            gpsData.gps_location.alt = gps.altitude*FACTOR;
+            gpsData.gps_location.lng = gps.longitude*1e8;
+            gpsData.gps_location.lat = gps.latitude*1e8;
+            gpsData.gps_location.alt = gps.altitude*1e8;
             gpsData.gps_horizontal_accuracy = gps.horizontal_accuracy;
             gpsData.gps_vertical_accuracy = gps.vertical_accuracy;
             gpsData.gps_have_vertical_velocity = false;
